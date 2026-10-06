@@ -23,7 +23,7 @@ pipeline {
 
                     // เรียกเช็ก Endpoint /health เพื่อยืนยันว่า Node.js และ MySQL ทำงานปกติ
                     def status = sh(
-                        script: "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/health",
+                        script: "curl -s -o /dev/null -w '%{http_code}' http://host.docker.internal:3000/health || curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/health",
                         returnStdout: true
                     ).trim()
 
