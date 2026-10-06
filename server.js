@@ -84,6 +84,116 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// ==========================================
+// PET PROFILE APIs (UC-02)
+// ==========================================
+
+// 1. ดึงรายการสัตว์เลี้ยงทั้งหมดของผู้ใช้ (Read All)
+app.get('/api/pets/user/:userId', async (req, res) => {
+ try {
+    const { userId } = req.params;
+    
+    // ป้องกันกรณี userId ไม่ส่งมา หรือส่ง 'undefined'
+    if (!userId || userId === 'undefined') {
+      return res.status(400).json({ success: false, message: 'Invalid User ID' });
+    }
+
+    const [pets] = await db.execute(
+      'SELECT * FROM pets WHERE user_id = ? ORDER BY id DESC',
+      [userId]
+    );
+    res.json({ success: true, pets: pets });
+  } catch (error) {
+    console.error('Fetch Pets Error:', error);
+    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดจากฐานข้อมูล' });
+  }
+});
+
+// 2. ดึงข้อมูลสัตว์เลี้ยงเฉพาะตัว (Read Single)
+app.get('/api/pets/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [pets] = await db.execute('SELECT * FROM pets WHERE id = ?', [id]);
+    if (pets.length === 0) {
+      return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลสัตว์เลี้ยง' });
+    }
+    res.json({ success: true, pet: pets[0] });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์' });
+  }
+});
+
+// 3. เพิ่มสัตว์เลี้ยงใหม่ (Create)
+app.post('/api/pets', async (req, res) => {
+  try {
+    const { user_id, name, type, breed, age, gender, weight, notes } = req.body;
+
+    if (!user_id || !name || !type) {
+      return res.status(400).json({ success: false, message: 'กรุณากรอกข้อมูลสำคัญให้ครบถ้วน' });
+    }
+
+    const [result] = await db.execute(
+      `INSERT INTO pets (user_id, name, type, breed, age, gender, weight, notes) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [user_id, name, type, breed || '', age || '', gender || 'unknown', weight || 0.00, notes || '']
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'บันทึกข้อมูลสัตว์เลี้ยงสำเร็จ',
+      petId: result.insertId
+    });
+  } catch (error) {
+    console.error('Add Pet Error:', error);
+    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการเพิ่มข้อมูล' });
+  }
+});
+
+// 4. แก้ไขข้อมูลสัตว์เลี้ยง (Update)
+app.put('/api/pets/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, type, breed, age, gender, weight, notes } = req.body;
+
+    if (!name || !type) {
+      return res.status(400).json({ success: false, message: 'กรุณากรอกข้อมูลสำคัญให้ครบถ้วน' });
+    }
+
+    const [result] = await db.execute(
+      `UPDATE pets 
+       SET name = ?, type = ?, breed = ?, age = ?, gender = ?, weight = ?, notes = ?
+       WHERE id = ?`,
+      [name, type, breed || '', age || '', gender || 'unknown', weight || 0.00, notes || '', id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลสัตว์เลี้ยงที่ต้องการแก้ไข' });
+    }
+
+    res.json({ success: true, message: 'อัปเดตข้อมูลสัตว์เลี้ยงเรียบร้อยแล้ว' });
+  } catch (error) {
+    console.error('Update Pet Error:', error);
+    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการแก้ไขข้อมูล' });
+  }
+});
+
+// 5. ลบสัตว์เลี้ยง (Delete)
+app.delete('/api/pets/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [result] = await db.execute('DELETE FROM pets WHERE id = ?', [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลสัตว์เลี้ยง' });
+    }
+
+    res.json({ success: true, message: 'ลบข้อมูลสัตว์เลี้ยงเรียบร้อยแล้ว' });
+  } catch (error) {
+    console.error('Delete Pet Error:', error);
+    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการลบข้อมูล' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

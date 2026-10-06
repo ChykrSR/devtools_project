@@ -49,11 +49,14 @@ async function handleLogin(e) {
 
     const data = await response.json();
     if (response.ok && data.success) {
+      // 1. บันทึก User ลง LocalStorage
       localStorage.setItem('user', JSON.stringify(data.user));
-      showAlert('เข้าสู่ระบบสำเร็จ!', true);
+      showAlert('เข้าสู่ระบบสำเร็จ! กำลังไปที่หน้าแดชบอร์ด...', true);
+      
+      // 2. ย้ายไปยังหน้า Dashboard หลักหลังจาก 0.8 วินาที
       setTimeout(() => {
-        alert(`ยินดีต้อนรับคุณ ${data.user.full_name} (${data.user.role})`);
-      }, 500);
+        window.location.href = 'dashboard.html';
+      }, 800);
     } else {
       showAlert(data.message || 'เข้าสู่ระบบไม่สำเร็จ');
     }
