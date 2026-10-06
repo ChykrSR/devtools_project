@@ -1,32 +1,35 @@
-version: '3.8'
-
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  # บริการ Node.js Web App
+  web:
+    build: .
     ports:
-      - "${APP_PORT:-3000}:3000"
-    env_file:
-      - .env  # แยก Configuration ออกจาก Image
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=rootpassword
+      - DB_NAME=mydb
     depends_on:
       db:
         condition: service_healthy
-    restart: unless-stopped
+    restart: always
 
+  # บริการ MySQL Database
   db:
-    image: postgres:15-alpine
+    image: mysql:8.0
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: mydb
+    ports:
+      - "3306:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql/data # คงสภาพข้อมูล (Persistence Data)
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
       timeout: 5s
       retries: 5
 
 volumes:
-  postgres_data: # Volume ที่ตัดขาดออกจาก Container Lifecycle
+  mysql_data:
