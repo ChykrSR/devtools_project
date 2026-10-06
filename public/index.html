@@ -2,17 +2,74 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>Simple Web App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่ระบบ / ลงทะเบียน - Pet Care Clinic</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>รายชื่อสมาชิกในระบบ</h1>
-  
-  <!-- จุดที่ app.js จะนำข้อมูลมาแสดง -->
-  <ul id="user-list">
-    <li>กำลังโหลดข้อมูล...</li>
-  </ul>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
 
-  <!-- ดึงไฟล์ app.js มาทำงาน -->
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+    <!-- Header -->
+    <div class="bg-teal-600 text-white p-6 text-center">
+      <h1 class="text-2xl font-bold">🐾 Pet Care Clinic</h1>
+      <p class="text-teal-100 text-sm mt-1">ระบบจัดการคลินิกสัตว์เลี้ยง</p>
+    </div>
+
+    <!-- Tabs Toggle -->
+    <div class="flex border-b">
+      <button id="tab-login-btn" onclick="switchTab('login')" class="w-1/2 py-3 text-center font-medium text-teal-600 border-b-2 border-teal-600 focus:outline-none">
+        เข้าสู่ระบบ
+      </button>
+      <button id="tab-register-btn" onclick="switchTab('register')" class="w-1/2 py-3 text-center font-medium text-slate-500 border-b-2 border-transparent hover:text-teal-600 focus:outline-none">
+        สมัครสมาชิก
+      </button>
+    </div>
+
+    <!-- Form Container -->
+    <div class="p-6">
+      <!-- Alert Message Box -->
+      <div id="alert-box" class="hidden mb-4 p-3 rounded-lg text-sm"></div>
+
+      <!-- Login Form -->
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700">อีเมล</label>
+          <input type="email" id="login-email" required placeholder="user@example.com" class="mt-1 w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">รหัสผ่าน</label>
+          <input type="password" id="login-password" required placeholder="••••••••" class="mt-1 w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+        </div>
+        <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2.5 rounded-lg transition">
+          เข้าสู่ระบบ
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+        <div>
+          <label class="block text-sm font-medium text-slate-700">ชื่อ - นามสกุล</label>
+          <input type="text" id="reg-fullname" required placeholder="สมชาย ใจดี" class="mt-1 w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">อีเมล</label>
+          <input type="email" id="reg-email" required placeholder="user@example.com" class="mt-1 w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">เบอร์โทรศัพท์</label>
+          <input type="tel" id="reg-phone" placeholder="0812345678" class="mt-1 w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700">รหัสผ่าน</label>
+          <input type="password" id="reg-password" required placeholder="อย่างน้อย 6 ตัวอักษร" class="mt-1 w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none">
+        </div>
+        <button type="submit" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-medium py-2.5 rounded-lg transition">
+          ยืนยันการสมัครสมาชิก
+        </button>
+      </form>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
