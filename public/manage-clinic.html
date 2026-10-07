@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UC-11: Manage User & Clinic Data - Pet Clinic Management System</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Sarabun for Thai Readability -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Sarabun', 'sans-serif'],
+                    },
+                    colors: {
+                        clinic: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', 'Sarabun', sans-serif; }
+        /* Custom scrollbar for sleeker tables & cards */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Toggle Switch Animation */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #059669;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #059669;
+        }
+
+        /* Glassmorphism preview effect */
+        .preview-paper {
+            background-color: #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col min-h-screen">
+
+    <!-- Top Header Bar -->
+    <header class="bg-clinic-800 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand & Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-white text-clinic-700 flex items-center justify-center font-bold text-xl shadow-inner">
+                        <i class="fa-solid fa-paw text-clinic-600"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-lg tracking-tight" id="navHeaderClinicName">Pet Care Clinic</span>
+                            <span class="bg-clinic-600 text-xs px-2 py-0.5 rounded-full font-medium text-emerald-100">Admin Panel</span>
+                        </div>
+                        <p class="text-xs text-clinic-200 hidden sm:block">Pet Clinic Management System (v0.2.0 - UC-11)</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="flex items-center space-x-1 sm:space-x-2">
+                    <button id="tabUsersBtn" onclick="switchTab('users')" class="px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center space-x-2 bg-clinic-700 text-white shadow-sm border border-clinic-600">
+                        <i class="fa-solid fa-users-gear text-clinic-200"></i>
+                        <span class="hidden md:inline">จัดการผู้ใช้งาน</span>
+                        <span class="md:hidden">ผู้ใช้</span>
+                    </button>
+                    <button id="tabClinicBtn" onclick="switchTab('clinic')" class="px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center space-x-2 text-clinic-100 hover:bg-clinic-700 hover:text-white">
+                        <i class="fa-solid fa-hospital-user text-clinic-200"></i>
+                        <span class="hidden md:inline">ตั้งค่าข้อมูลคลินิก</span>
+                        <span class="md:hidden">คลินิก</span>
+                    </button>
+                    <button onclick="openApiModal()" class="ml-2 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-950 text-emerald-300 hover:bg-black transition border border-emerald-700/50 flex items-center space-x-1">
+                        <i class="fa-solid fa-code"></i>
+                        <span class="hidden lg:inline">API Reference</span>
+                    </button>
+                </nav>
+
+                <!-- User Badge -->
+                <div class="flex items-center space-x-3 border-l border-clinic-700 pl-4">
+                    <div class="w-9 h-9 rounded-full bg-emerald-500 text-clinic-900 font-bold flex items-center justify-center text-sm shadow">
+                        AD
+                    </div>
+                    <div class="hidden lg:block text-left text-xs">
+                        <p class="font-semibold text-white leading-tight">Administrator</p>
+                        <p class="text-clinic-300">admin@petclinic.com</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: USER MANAGEMENT VIEW                -->
+        <!-- ========================================== -->
+        <section id="usersView" class="space-y-6">
+            
+            <!-- Section Title & Subtitle -->
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-users text-clinic-600"></i>
+                        การจัดการผู้ใช้งานและสิทธิ์ (User Management & Role Permissions)
+                    </h1>
+                    <p class="text-sm text-slate-500 mt-1">
+                        บริหารจัดการบัญชีผู้ใช้ กำหนดสิทธิ์การใช้งานระบบ (Admin, Vet, Staff, Pet Owner) และระงับสิทธิ์ชั่วคราว
+                    </p>
+                </div>
+                <button onclick="openAddUserModal()" class="inline-flex items-center justify-center px-4 py-2.5 bg-clinic-600 hover:bg-clinic-700 active:bg-clinic-800 text-white font-medium rounded-xl shadow-md transition-all duration-150 gap-2 shrink-0">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>เพิ่มผู้ใช้งานใหม่</span>
+                </button>
+            </div>
+
+            <!-- Stats Summary Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-clinic-500 transition">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-500 uppercase">ผู้ใช้งานทั้งหมด</span>
+                        <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                    </div>
+                    <p class="text-2xl font-bold text-slate-800 mt-2" id="statTotalUsers">0</p>
+                    <span class="text-xs text-slate-400">ผู้ใช้ในระบบ</span>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-clinic-500 transition">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-emerald-600 uppercase">สัตวแพทย์ (Vet)</span>
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-user-doctor"></i>
+                        </div>
+                    </div>
+                    <p class="text-2xl font-bold text-slate-800 mt-2" id="statVetUsers">0</p>
+                    <span class="text-xs text-slate-400">ให้การรักษา</span>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-clinic-500 transition">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-amber-600 uppercase">เจ้าหน้าที่ (Staff)</span>
+                        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-clipboard-user"></i>
+                        </div>
+                    </div>
+                    <p class="text-2xl font-bold text-slate-800 mt-2" id="statStaffUsers">0</p>
+                    <span class="text-xs text-slate-400">ต้อนรับ & การเงิน</span>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-clinic-500 transition">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-blue-600 uppercase">เจ้าของสัตว์ (Owner)</span>
+                        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-hospital-user"></i>
+                        </div>
+                    </div>
+                    <p class="text-2xl font-bold text-slate-800 mt-2" id="statOwnerUsers">0</p>
+                    <span class="text-xs text-slate-400">ผู้ใช้ทั่วไป</span>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-red-400 transition col-span-2 md:col-span-1">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-red-500 uppercase">ปิดใช้งาน (Inactive)</span>
+                        <div class="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center text-sm">
+                            <i class="fa-solid fa-user-slash"></i>
+                        </div>
+                    </div>
+                    <p class="text-2xl font-bold text-slate-800 mt-2" id="statInactiveUsers">0</p>
+                    <span class="text-xs text-slate-400">ถูกระงับสิทธิ์</span>
+                </div>
+            </div>
+
+            <!-- Search & Filter Controls Card -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-3 items-center justify-between">
+                <div class="relative w-full md:w-96">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" oninput="filterUsers()" placeholder="ค้นหาตาม ชื่อ, อีเมล หรือ เบอร์โทรศัพท์..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:bg-white transition">
+                </div>
+
+                <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                    <div class="flex items-center space-x-1 shrink-0">
+                        <span class="text-xs text-slate-500 font-medium pl-1"><i class="fa-solid fa-filter text-slate-400"></i> บทบาท:</span>
+                        <select id="roleFilter" onchange="filterUsers()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 font-medium text-slate-700">
+                            <option value="all">ทั้งหมด (All Roles)</option>
+                            <option value="admin">Admin (ผู้ดูแลระบบ)</option>
+                            <option value="vet">Vet (สัตวแพทย์)</option>
+                            <option value="staff">Staff (เจ้าหน้าที่)</option>
+                            <option value="pet_owner">Pet Owner (เจ้าของสัตว์)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center space-x-1 shrink-0">
+                        <span class="text-xs text-slate-500 font-medium pl-1">สถานะ:</span>
+                        <select id="statusFilter" onchange="filterUsers()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 font-medium text-slate-700">
+                            <option value="all">ทั้งหมด (All Status)</option>
+                            <option value="active">เปิดใช้งาน (Active)</option>
+                            <option value="inactive">ปิดใช้งาน (Inactive)</option>
+                        </select>
+                    </div>
+
+                    <button onclick="resetFilters()" class="px-3 py-2 text-xs text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl font-medium transition shrink-0">
+                        <i class="fa-solid fa-rotate"></i> รีเซ็ต
+                    </button>
+                </div>
+            </div>
+
+            <!-- User Table Card -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="py-3.5 px-4"># ID</th>
+                                <th class="py-3.5 px-4">ผู้ใช้งาน (User Info)</th>
+                                <th class="py-3.5 px-4">เบอร์โทรศัพท์</th>
+                                <th class="py-3.5 px-4">บทบาท (Role)</th>
+                                <th class="py-3.5 px-4 text-center">สถานะใช้งาน</th>
+                                <th class="py-3.5 px-4">วันที่ลงทะเบียน</th>
+                                <th class="py-3.5 px-4 text-right">จัดการ (Actions)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody" class="divide-y divide-slate-100 text-sm">
+                            <!-- User Dynamic Rows will be injected here via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State Container -->
+                <div id="emptyUsersState" class="hidden p-8 text-center">
+                    <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fa-solid fa-user-slash text-2xl"></i>
+                    </div>
+                    <h3 class="text-base font-semibold text-slate-700">ไม่พบข้อมูลผู้ใช้งาน</h3>
+                    <p class="text-xs text-slate-400 mt-1">ลองเปลี่ยนเงื่อนไขการค้นหา หรือกดปุ่มรีเซ็ตการตัวกรอง</p>
+                </div>
+
+                <!-- Table Footer & Count -->
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+                    <div>
+                        แสดง <span id="showingUserCount" class="font-bold text-slate-700">0</span> รายการ จากทั้งหมด <span id="totalUserCount" class="font-bold text-slate-700">0</span> บัญชี
+                    </div>
+                    <div class="flex items-center space-x-1">
+                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>ข้อมูลอัปเดตเรียลไทม์กับ LocalStorage Mock API</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: CLINIC SETTINGS VIEW                -->
+        <!-- ========================================== -->
+        <section id="clinicView" class="hidden space-y-6">
+            
+            <!-- Section Header -->
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h1 class="text-xl sm:text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-hospital text-clinic-600"></i>
+                    ตั้งค่าข้อมูลคลินิก (Clinic Information Settings)
+                </h1>
+                <p class="text-sm text-slate-500 mt-1">
+                    กำหนดข้อมูลพื้นฐานของคลินิก เช่น ชื่อคลินิก, ที่อยู่, เบอร์โทรศัพท์ และเลขภาษี ซึ่งจะไปปรากฏที่ส่วนหัวของเว็บไซต์ รวมถึงส่วนหัวเอกสารใบนัดหมายและใบเสร็จรับเงิน
+                </p>
+            </div>
+
+            <!-- 2-Column Responsive Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Left Column: Clinic Settings Form (7 cols) -->
+                <div class="lg:col-span-7 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                        <h2 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-pen-to-square text-clinic-600"></i>
+                            แบบฟอร์มแก้ไขข้อมูลคลินิก
+                        </h2>
+                        <span class="text-xs bg-clinic-50 text-clinic-700 px-2.5 py-1 rounded-md font-medium border border-clinic-200">UC-11 Setting</span>
+                    </div>
+
+                    <form id="clinicForm" onsubmit="handleSaveClinic(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- Clinic Name -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    ชื่อคลินิก / สถานพยาบาล <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-clinic-medical absolute left-3 top-3 text-slate-400 text-sm"></i>
+                                    <input type="text" id="clinicNameInput" required oninput="updateClinicLivePreview()" placeholder="เช่น Pet Care Clinic (เพ็ทแคร์ คลินิก)" class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:bg-white transition">
+                                </div>
+                            </div>
+
+                            <!-- Tax ID -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    เลขประจำตัวผู้เสียภาษี / เลขทะเบียน
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-id-card absolute left-3 top-3 text-slate-400 text-sm"></i>
+                                    <input type="text" id="clinicTaxIdInput" oninput="updateClinicLivePreview()" placeholder="เช่น 0105560000000" class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:bg-white transition">
+                                </div>
+                            </div>
+
+                            <!-- Phone Number -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    เบอร์โทรศัพท์ติดต่อ <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-phone absolute left-3 top-3 text-slate-400 text-sm"></i>
+                                    <input type="text" id="clinicPhoneInput" required oninput="updateClinicLivePreview()" placeholder="เช่น 02-123-4567, 081-999-8888" class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:bg-white transition">
+                                </div>
+                            </div>
+
+                            <!-- Email Address -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    อีเมลคลินิก
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-envelope absolute left-3 top-3 text-slate-400 text-sm"></i>
+                                    <input type="email" id="clinicEmailInput" oninput="updateClinicLivePreview()" placeholder="เช่น contact@petcareclinic.com" class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:bg-white transition">
+                                </div>
+                            </div>
+
+                            <!-- Opening Hours -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    เวลาทำการ
+                                </label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-clock absolute left-3 top-3 text-slate-400 text-sm"></i>
+                                    <input type="text" id="clinicHoursInput" oninput="updateClinicLivePreview()" placeholder="เช่น จันทร์ - อาทิตย์: 09:00 - 20:00 น." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:bg-white transition">
+                                </div>
+                            </div>
+
+                            <!-- Address Textarea -->
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">
+                                    ที่อยู่คลินิก (สำหรับแสดงบนใบเสร็จและใบนัด) <span class="text-red-500">*</span>
+                                </label>
+                                <textarea id="clinicAddressInput" required rows="3" oninput="updateClinicLivePreview()" placeholder="ระบุบ้านเลขที่ ถนน แขวง เขต จังหวัด..." class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:bg-white transition"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Form Action Buttons -->
+                        <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+                            <button type="button" onclick="loadClinicDataIntoForm()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition">
+                                <i class="fa-solid fa-undo mr-1"></i> เลิกทำ (Reset)
+                            </button>
+                            <button type="submit" class="px-6 py-2.5 bg-clinic-600 hover:bg-clinic-700 active:bg-clinic-800 text-white rounded-xl text-sm font-medium shadow-md transition flex items-center space-x-2">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>บันทึกข้อมูลคลินิก</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Right Column: Live Document & Header Preview (5 cols) -->
+                <div class="lg:col-span-5 space-y-4">
+                    <div class="bg-slate-900 text-white p-4 rounded-2xl shadow-lg border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+                                <span class="text-xs font-mono text-slate-400 pl-2">Live Document Preview</span>
+                            </div>
+                            <span class="text-xs bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded font-mono border border-emerald-800/50">Auto-Update</span>
+                        </div>
+
+                        <!-- Preview Mode Selector Buttons -->
+                        <div class="flex items-center space-x-1 bg-slate-800 p-1 rounded-xl text-xs font-medium">
+                            <button onclick="setPreviewMode('invoice')" id="prevInvoiceBtn" class="flex-1 py-1.5 rounded-lg text-center bg-clinic-600 text-white shadow">
+                                <i class="fa-solid fa-file-invoice"></i> ใบเสร็จ (Invoice)
+                            </button>
+                            <button onclick="setPreviewMode('appointment')" id="prevAppointBtn" class="flex-1 py-1.5 rounded-lg text-center text-slate-400 hover:text-white">
+                                <i class="fa-solid fa-calendar-check"></i> ใบนัดหมาย
+                            </button>
+                        </div>
+
+                        <!-- Mock Document Paper Container -->
+                        <div class="preview-paper rounded-xl p-5 text-slate-800 text-xs transition duration-200">
+                            
+                            <!-- Invoice Preview Template -->
+                            <div id="invoicePreviewContent" class="space-y-4">
+                                <div class="flex justify-between items-start border-b-2 border-clinic-600 pb-3">
+                                    <div>
+                                        <h3 class="font-bold text-base text-clinic-800 tracking-tight" id="prevClinicName">Pet Care Clinic</h3>
+                                        <p class="text-[11px] text-slate-600 mt-0.5 max-w-[220px]" id="prevClinicAddress">123/45 ถนนพหลโยธิน แขวงอนุสาวรีย์ เขตบางเขน กรุงเทพฯ 10220</p>
+                                        <p class="text-[11px] text-slate-500 mt-1">
+                                            <span>โทร: <span id="prevClinicPhone">02-123-4567</span></span> | 
+                                            <span>TAX: <span id="prevClinicTaxId">0105560000000</span></span>
+                                        </p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="bg-slate-100 text-slate-700 font-bold px-2.5 py-1 rounded text-[11px] block">ใบเสร็จรับเงิน</span>
+                                        <span class="text-[10px] text-slate-400 block mt-1">INV-202610-0089</span>
+                                        <span class="text-[10px] text-slate-400 block">วันที่: 07 ต.ค. 2026</span>
+                                    </div>
+                                </div>
+
+                                <!-- Sample Line Items -->
+                                <div class="space-y-1.5 bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-[11px]">
+                                    <div class="flex justify-between font-semibold text-slate-700 border-b pb-1">
+                                        <span>รายการรักษา / บริการ</span>
+                                        <span>จำนวนเงิน</span>
+                                    </div>
+                                    <div class="flex justify-between text-slate-600">
+                                        <span>1. ตรวจสุขภาพสัตว์เลี้ยง (General Exam)</span>
+                                        <span>350.00</span>
+                                    </div>
+                                    <div class="flex justify-between text-slate-600">
+                                        <span>2. วัคซีนพิษสุนัขบ้า (Rabies Vaccine)</span>
+                                        <span>250.00</span>
+                                    </div>
+                                    <div class="flex justify-between font-bold text-clinic-700 pt-1 border-t">
+                                        <span>รวมเป็นเงินทั้งสิ้น</span>
+                                        <span>600.00 บาท</span>
+                                    </div>
+                                </div>
+
+                                <div class="text-[10px] text-slate-400 text-center italic border-t border-dashed pt-2">
+                                    เวลาทำการ: <span id="prevClinicHours">จันทร์ - อาทิตย์: 09:00 - 20:00 น.</span>
+                                </div>
+                            </div>
+
+                            <!-- Appointment Preview Template -->
+                            <div id="appointmentPreviewContent" class="hidden space-y-3">
+                                <div class="text-center border-b pb-3">
+                                    <div class="w-8 h-8 rounded-full bg-clinic-100 text-clinic-700 flex items-center justify-center mx-auto mb-1 text-sm">
+                                        <i class="fa-solid fa-calendar-check"></i>
+                                    </div>
+                                    <h3 class="font-bold text-sm text-slate-800" id="prevAppClinicName">Pet Care Clinic</h3>
+                                    <p class="text-[10px] text-slate-500" id="prevAppClinicPhone">โทร: 02-123-4567</p>
+                                    <span class="inline-block bg-clinic-600 text-white text-[10px] font-bold px-3 py-0.5 rounded-full mt-1">ใบนัดหมายตรวจติดตามผล</span>
+                                </div>
+                                <div class="bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-[11px] space-y-1 text-amber-900">
+                                    <p class="font-semibold"><i class="fa-solid fa-paw"></i> สัตว์เลี้ยง: เจ้าโกลเด้น (สุนัข)</p>
+                                    <p><i class="fa-solid fa-clock"></i> นัดหมายวันที่: 15 ต.ค. 2026 เวลา 10:30 น.</p>
+                                    <p><i class="fa-solid fa-user-doctor"></i> สัตวแพทย์: นสพ. สมชาย ใจดี</p>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <p class="text-[11px] text-slate-400 text-center leading-relaxed">
+                            💡 ข้อมูลที่แก้ไขจะถูกนำไปใช้อัตโนมัติในโมดูล UC-04 (Appointments) และ UC-10 (Billing)
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- MODALS & DIALOGS                          -->
+    <!-- ========================================== -->
+
+    <!-- 1. Add / Edit User Modal -->
+    <div id="userModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden transform transition-all duration-200">
+            <!-- Modal Header -->
+            <div class="bg-clinic-800 text-white p-4 px-6 flex items-center justify-between">
+                <h3 class="font-bold text-base flex items-center gap-2" id="modalUserTitle">
+                    <i class="fa-solid fa-user-plus"></i> เพิ่มผู้ใช้งานใหม่
+                </h3>
+                <button onclick="closeUserModal()" class="text-clinic-200 hover:text-white text-lg w-8 h-8 rounded-full flex items-center justify-center hover:bg-clinic-700 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Form Body -->
+            <form id="userForm" onsubmit="handleSaveUser(event)" class="p-6 space-y-4">
+                <input type="hidden" id="modalUserId">
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อ-นามสกุล <span class="text-red-500">*</span></label>
+                    <input type="text" id="modalFullName" required placeholder="เช่น นายสมศักดิ์ ใจดี หรือ Dr. Somchai" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:bg-white transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">อีเมล (Email) <span class="text-red-500">*</span></label>
+                    <input type="email" id="modalEmail" required placeholder="user@petclinic.com" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:bg-white transition">
+                    <p id="emailWarning" class="hidden text-[11px] text-red-500 mt-1">⚠️ อีเมลนี้มีอยู่ในระบบแล้ว กรุณาใช้อีเมลอื่น</p>
+                </div>
+
+                <div id="passwordFieldGroup">
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">
+                        รหัสผ่าน (Password) <span id="passwordRequiredStar" class="text-red-500">*</span>
+                    </label>
+                    <input type="password" id="modalPassword" placeholder="กำหนดรหัสผ่านอย่างน้อย 6 ตัวอักษร" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:bg-white transition">
+                    <p class="text-[10px] text-slate-400 mt-1" id="passwordHint">สำหรับกรณีแก้ไขบัญชี หากไม่ต้องการเปลี่ยนรหัสผ่านให้เว้นว่างไว้</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์</label>
+                        <input type="text" id="modalPhone" placeholder="081-234-5678" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:bg-white transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">บทบาท (Role) <span class="text-red-500">*</span></label>
+                        <select id="modalRole" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-clinic-500 focus:bg-white transition font-medium">
+                            <option value="pet_owner">Pet Owner (เจ้าของสัตว์)</option>
+                            <option value="vet">Vet (สัตวแพทย์)</option>
+                            <option value="staff">Staff (เจ้าหน้าที่)</option>
+                            <option value="admin">Admin (ผู้ดูแลระบบ)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex items-center justify-between border-t border-slate-100">
+                    <span class="text-xs font-semibold text-slate-700">สถานะเปิดใช้งาน (Active Status)</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="modalIsActive" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-clinic-600"></div>
+                    </label>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="pt-4 flex items-center justify-end space-x-2 border-t border-slate-100">
+                    <button type="button" onclick="closeUserModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-clinic-600 hover:bg-clinic-700 text-white text-xs font-semibold rounded-xl shadow transition">
+                        บันทึกข้อมูล
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Reset Password Modal -->
+    <div id="resetPasswordModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div class="bg-amber-600 text-white p-4 px-6 flex items-center justify-between">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-key"></i> รีเซ็ตรหัสผ่านผู้ใช้
+                </h3>
+                <button onclick="closeResetPasswordModal()" class="text-amber-100 hover:text-white text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleConfirmResetPassword(event)" class="p-6 space-y-4">
+                <input type="hidden" id="resetUserId">
+                <div>
+                    <p class="text-xs text-slate-500">กำลังเปลี่ยนรหัสผ่านให้แก่:</p>
+                    <p class="text-sm font-bold text-slate-800" id="resetUserName">User Name</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสผ่านใหม่ (New Password) <span class="text-red-500">*</span></label>
+                    <input type="password" id="newPasswordInput" required minlength="6" placeholder="อย่างน้อย 6 ตัวอักษร" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
+                </div>
+                <div class="flex items-center justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeResetPasswordModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl shadow transition">
+                        ยืนยันเปลี่ยนรหัสผ่าน
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Custom Delete Confirmation Modal (Replaces forbidden alert/confirm) -->
+    <div id="deleteModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center space-y-4">
+            <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-800">ยืนยันการลบผู้ใช้งาน?</h3>
+                <p class="text-xs text-slate-500 mt-1">คุณกำลังจะลบบัญชี <span id="deleteUserName" class="font-bold text-slate-800"></span> ออกจากระบบ การดำเนินการนี้ไม่สามารถย้อนกลับได้</p>
+            </div>
+            <div class="flex items-center justify-center space-x-3 pt-2">
+                <button onclick="closeDeleteModal()" class="px-5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition">
+                    ยกเลิก
+                </button>
+                <button onclick="executeDeleteUser()" class="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-xl shadow transition">
+                    ยืนยันลบข้อมูล
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Developer API Reference Modal -->
+    <div id="apiModal" class="fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 text-slate-100 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[85vh] flex flex-col border border-slate-800">
+            <div class="p-4 px-6 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-terminal text-emerald-400"></i>
+                    <h3 class="font-bold text-sm text-white">UC-11 REST API Reference & Integration Guide</h3>
+                </div>
+                <button onclick="closeApiModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-4 text-xs font-mono">
+                <div>
+                    <span class="text-emerald-400 font-bold">GET</span> <span class="text-white">/api/users</span>
+                    <p class="text-slate-400 mt-0.5">ดึงรายการผู้ใช้ทั้งหมด รองรับ Query Params: <code class="text-amber-300">?role=vet&search=somchai</code></p>
+                </div>
+                <hr class="border-slate-800">
+                <div>
+                    <span class="text-blue-400 font-bold">POST</span> <span class="text-white">/api/users</span>
+                    <p class="text-slate-400 mt-0.5">เพิ่มผู้ใช้ใหม่โดย Admin (Body: <code class="text-amber-300">{ full_name, email, password, phone, role }</code>)</p>
+                </div>
+                <hr class="border-slate-800">
+                <div>
+                    <span class="text-amber-400 font-bold">PUT</span> <span class="text-white">/api/users/:id</span>
+                    <p class="text-slate-400 mt-0.5">แก้ไขข้อมูลผู้ใช้ หรือปรับสถานะเปิด/ปิดการใช้งาน (is_active: 1/0)</p>
+                </div>
+                <hr class="border-slate-800">
+                <div>
+                    <span class="text-emerald-400 font-bold">GET</span> <span class="text-white">/api/clinic</span> | <span class="text-amber-400 font-bold">PUT</span> <span class="text-white">/api/clinic</span>
+                    <p class="text-slate-400 mt-0.5">ดึงและอัปเดตข้อมูลคลินิก (ชื่อ, เบอร์โทร, อีเมล, เลขประจำตัวผู้เสียภาษี, เวลาทำการ, ที่อยู่)</p>
+                </div>
+                
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 text-slate-300">
+                    <p class="text-emerald-400 font-semibold mb-2">JSON Response Standard Format:</p>
+                    <pre class="text-[11px] text-slate-400 overflow-x-auto">
+{
+  "success": true,
+  "message": "User active status updated successfully",
+  "data": { "id": 2, "is_active": 1 }
+}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- ========================================== -->
+    <!-- JAVASCRIPT APP LOGIC & MOCK BACKEND DATA   -->
+    <!-- ========================================== -->
+    <script>
+        // Default seed data matching init.sql
+        const DEFAULT_USERS = [
+            { id: 1, full_name: "Admin User", email: "admin@petclinic.com", phone: "081-111-2222", role: "admin", is_active: 1, created_at: "2026-01-10" },
+            { id: 2, full_name: "นสพ. สมชาย ใจดี (Dr. Somchai)", email: "somchai.vet@petclinic.com", phone: "082-333-4444", role: "vet", is_active: 1, created_at: "2026-02-15" },
+            { id: 3, full_name: "สพ.ญ. วรรณา รักสัตว์ (Dr. Wanna)", email: "wanna.vet@petclinic.com", phone: "083-555-6666", role: "vet", is_active: 1, created_at: "2026-03-01" },
+            { id: 4, full_name: "เจมส์ มีสุข (Staff Jane)", email: "jane.staff@petclinic.com", phone: "084-777-8888", role: "staff", is_active: 1, created_at: "2026-03-12" },
+            { id: 5, full_name: "สมพงษ์ เลี้ยงหมา (Sompong)", email: "sompong@gmail.com", phone: "085-999-0000", role: "pet_owner", is_active: 1, created_at: "2026-04-05" },
+            { id: 6, full_name: "วิภาวี มิวสิค (Vipawee)", email: "vipawee@gmail.com", phone: "086-123-9988", role: "pet_owner", is_active: 0, created_at: "2026-05-20" }
+        ];
+
+        const DEFAULT_CLINIC_INFO = {
+            name: "Pet Care Clinic (เพ็ทแคร์ คลินิก)",
+            address: "123/45 ถนนพหลโยธิน แขวงอนุสาวรีย์ เขตบางเขน กรุงเทพมหานคร 10220",
+            phone: "02-123-4567, 081-999-8888",
+            email: "contact@petcareclinic.com",
+            tax_id: "0105560000000",
+            opening_hours: "จันทร์ - อาทิตย์: 09:00 - 20:00 น."
+        };
+
+        // Application State
+        let usersData = [];
+        let clinicData = {};
+        let userToDeleteId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initLocalStorageData();
+            renderUsersTable();
+            loadClinicDataIntoForm();
+            updateClinicLivePreview();
+        });
+
+        // Initialize LocalStorage Data
+        function initLocalStorageData() {
+            if (!localStorage.getItem('pet_clinic_users')) {
+                localStorage.setItem('pet_clinic_users', JSON.stringify(DEFAULT_USERS));
+            }
+            if (!localStorage.getItem('pet_clinic_info')) {
+                localStorage.setItem('pet_clinic_info', JSON.stringify(DEFAULT_CLINIC_INFO));
+            }
+            usersData = JSON.parse(localStorage.getItem('pet_clinic_users'));
+            clinicData = JSON.parse(localStorage.getItem('pet_clinic_info'));
+        }
+
+        function switchTab(tabName) {
+            const usersView = document.getElementById('usersView');
+            const clinicView = document.getElementById('clinicView');
+            const tabUsersBtn = document.getElementById('tabUsersBtn');
+            const tabClinicBtn = document.getElementById('tabClinicBtn');
+
+            if (tabName === 'users') {
+                usersView.classList.remove('hidden');
+                clinicView.classList.add('hidden');
+                
+                tabUsersBtn.className = "px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center space-x-2 bg-clinic-700 text-white shadow-sm border border-clinic-600";
+                tabClinicBtn.className = "px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center space-x-2 text-clinic-100 hover:bg-clinic-700 hover:text-white";
+            } else {
+                usersView.classList.add('hidden');
+                clinicView.classList.remove('hidden');
+
+                tabClinicBtn.className = "px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center space-x-2 bg-clinic-700 text-white shadow-sm border border-clinic-600";
+                tabUsersBtn.className = "px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center space-x-2 text-clinic-100 hover:bg-clinic-700 hover:text-white";
+            }
+        }
+
+        function renderUsersTable(filteredList = null) {
+            const list = filteredList || usersData;
+            const tbody = document.getElementById('userTableBody');
+            const emptyState = document.getElementById('emptyUsersState');
+            tbody.innerHTML = '';
+
+            updateUserStats();
+
+            if (list.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                list.forEach(user => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50/80 transition duration-150";
+
+                    // Role Badge HTML
+                    let roleBadgeClass = "";
+                    let roleLabel = "";
+                    switch(user.role) {
+                        case 'admin':
+                            roleBadgeClass = "bg-purple-100 text-purple-700 border-purple-200";
+                            roleLabel = "<i class='fa-solid fa-user-shield mr-1'></i> Admin";
+                            break;
+                        case 'vet':
+                            roleBadgeClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                            roleLabel = "<i class='fa-solid fa-user-doctor mr-1'></i> Vet";
+                            break;
+                        case 'staff':
+                            roleBadgeClass = "bg-amber-100 text-amber-800 border-amber-200";
+                            roleLabel = "<i class='fa-solid fa-clipboard-user mr-1'></i> Staff";
+                            break;
+                        default:
+                            roleBadgeClass = "bg-blue-100 text-blue-700 border-blue-200";
+                            roleLabel = "<i class='fa-solid fa-hospital-user mr-1'></i> Pet Owner";
+                    }
+
+                    // Avatar Initials
+                    const initials = user.full_name.substring(0, 2).toUpperCase();
+
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 font-mono text-xs text-slate-400">#${user.id}</td>
+                        <td class="py-3 px-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-9 h-9 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs shrink-0 shadow-sm">
+                                    ${initials}
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-slate-800 leading-tight">${user.full_name}</p>
+                                    <p class="text-xs text-slate-400 mt-0.5">${user.email}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4 text-xs font-mono text-slate-600">${user.phone || '-'}</td>
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${roleBadgeClass}">
+                                ${roleLabel}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" onchange="toggleUserStatus(${user.id}, this.checked)" class="sr-only peer" ${user.is_active ? 'checked' : ''}>
+                                <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-clinic-600"></div>
+                            </label>
+                        </td>
+                        <td class="py-3 px-4 text-xs text-slate-500">${user.created_at || '2026-01-01'}</td>
+                        <td class="py-3 px-4 text-right">
+                            <div class="flex items-center justify-end space-x-1">
+                                <button onclick="openEditUserModal(${user.id})" title="แก้ไขข้อมูล" class="p-1.5 text-slate-500 hover:text-clinic-600 hover:bg-clinic-50 rounded-lg transition">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button onclick="openResetPasswordModal(${user.id})" title="รีเซ็ตรหัสผ่าน" class="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition">
+                                    <i class="fa-solid fa-key"></i>
+                                </button>
+                                <button onclick="confirmDeleteUser(${user.id})" title="ลบผู้ใช้" class="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            document.getElementById('showingUserCount').innerText = list.length;
+            document.getElementById('totalUserCount').innerText = usersData.length;
+        }
+
+        function updateUserStats() {
+            document.getElementById('statTotalUsers').innerText = usersData.length;
+            document.getElementById('statVetUsers').innerText = usersData.filter(u => u.role === 'vet').length;
+            document.getElementById('statStaffUsers').innerText = usersData.filter(u => u.role === 'staff').length;
+            document.getElementById('statOwnerUsers').innerText = usersData.filter(u => u.role === 'pet_owner').length;
+            document.getElementById('statInactiveUsers').innerText = usersData.filter(u => !u.is_active).length;
+        }
+
+        function filterUsers() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const role = document.getElementById('roleFilter').value;
+            const status = document.getElementById('statusFilter').value;
+
+            const filtered = usersData.filter(user => {
+                const matchesSearch = user.full_name.toLowerCase().includes(query) ||
+                                      user.email.toLowerCase().includes(query) ||
+                                      (user.phone && user.phone.includes(query));
+                
+                const matchesRole = role === 'all' || user.role === role;
+                const matchesStatus = status === 'all' || 
+                                      (status === 'active' && user.is_active) || 
+                                      (status === 'inactive' && !user.is_active);
+
+                return matchesSearch && matchesRole && matchesStatus;
+            });
+
+            renderUsersTable(filtered);
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('roleFilter').value = 'all';
+            document.getElementById('statusFilter').value = 'all';
+            renderUsersTable();
+        }
+
+        function toggleUserStatus(userId, newStatus) {
+            const user = usersData.find(u => u.id === userId);
+            if (user) {
+                user.is_active = newStatus ? 1 : 0;
+                saveUsersToStorage();
+                showToast(`อัปเดตสถานะของ ${user.full_name} เป็น ${newStatus ? 'เปิดใช้งาน' : 'ปิดใช้งาน'} เรียบร้อยแล้ว`, 'info');
+                updateUserStats();
+            }
+        }
+
+        function openAddUserModal() {
+            document.getElementById('modalUserTitle').innerHTML = '<i class="fa-solid fa-user-plus"></i> เพิ่มผู้ใช้งานใหม่';
+            document.getElementById('userForm').reset();
+            document.getElementById('modalUserId').value = '';
+            document.getElementById('modalIsActive').checked = true;
+            document.getElementById('emailWarning').classList.add('hidden');
+            document.getElementById('modalPassword').required = true;
+            document.getElementById('passwordRequiredStar').classList.remove('hidden');
+            document.getElementById('passwordHint').innerText = "กำหนดรหัสผ่านตั้งต้นสำหรับผู้ใช้งาน";
+            
+            document.getElementById('userModal').classList.remove('hidden');
+        }
+
+        function openEditUserModal(userId) {
+            const user = usersData.find(u => u.id === userId);
+            if (!user) return;
+
+            document.getElementById('modalUserTitle').innerHTML = '<i class="fa-solid fa-user-pen"></i> แก้ไขข้อมูลผู้ใช้งาน';
+            document.getElementById('modalUserId').value = user.id;
+            document.getElementById('modalFullName').value = user.full_name;
+            document.getElementById('modalEmail').value = user.email;
+            document.getElementById('modalPhone').value = user.phone || '';
+            document.getElementById('modalRole').value = user.role;
+            document.getElementById('modalIsActive').checked = !!user.is_active;
+            
+            document.getElementById('modalPassword').value = '';
+            document.getElementById('modalPassword').required = false;
+            document.getElementById('passwordRequiredStar').classList.add('hidden');
+            document.getElementById('passwordHint').innerText = "หากไม่ต้องการเปลี่ยนรหัสผ่าน ให้เว้นว่างไว้";
+            document.getElementById('emailWarning').classList.add('hidden');
+
+            document.getElementById('userModal').classList.remove('hidden');
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').classList.add('hidden');
+        }
+
+        function handleSaveUser(e) {
+            e.preventDefault();
+            const id = document.getElementById('modalUserId').value;
+            const fullName = document.getElementById('modalFullName').value.trim();
+            const email = document.getElementById('modalEmail').value.trim();
+            const password = document.getElementById('modalPassword').value;
+            const phone = document.getElementById('modalPhone').value.trim();
+            const role = document.getElementById('modalRole').value;
+            const isActive = document.getElementById('modalIsActive').checked ? 1 : 0;
+
+            // Duplicate Email Check
+            const existing = usersData.find(u => u.email.toLowerCase() === email.toLowerCase() && u.id != id);
+            if (existing) {
+                document.getElementById('emailWarning').classList.remove('hidden');
+                return;
+            }
+
+            if (id) {
+                // Edit
+                const user = usersData.find(u => u.id == id);
+                if (user) {
+                    user.full_name = fullName;
+                    user.email = email;
+                    user.phone = phone;
+                    user.role = role;
+                    user.is_active = isActive;
+                    showToast(`อัปเดตข้อมูลผู้ใช้ ${fullName} เรียบร้อยแล้ว`, 'success');
+                }
+            } else {
+                // Create
+                const newId = usersData.length > 0 ? Math.max(...usersData.map(u => u.id)) + 1 : 1;
+                const newUser = {
+                    id: newId,
+                    full_name: fullName,
+                    email: email,
+                    phone: phone,
+                    role: role,
+                    is_active: isActive,
+                    created_at: new Date().toISOString().split('T')[0]
+                };
+                usersData.unshift(newUser);
+                showToast(`เพิ่มผู้ใช้งานใหม่ ${fullName} เรียบร้อยแล้ว`, 'success');
+            }
+
+            saveUsersToStorage();
+            closeUserModal();
+            filterUsers();
+        }
+
+        function openResetPasswordModal(userId) {
+            const user = usersData.find(u => u.id === userId);
+            if (!user) return;
+            document.getElementById('resetUserId').value = user.id;
+            document.getElementById('resetUserName').innerText = user.full_name;
+            document.getElementById('newPasswordInput').value = '';
+            document.getElementById('resetPasswordModal').classList.remove('hidden');
+        }
+
+        function closeResetPasswordModal() {
+            document.getElementById('resetPasswordModal').classList.add('hidden');
+        }
+
+        function handleConfirmResetPassword(e) {
+            e.preventDefault();
+            const userId = document.getElementById('resetUserId').value;
+            const user = usersData.find(u => u.id == userId);
+            if (user) {
+                showToast(`รีเซ็ตรหัสผ่านสำหรับ ${user.full_name} เรียบร้อยแล้ว`, 'success');
+                closeResetPasswordModal();
+            }
+        }
+
+        function confirmDeleteUser(userId) {
+            const user = usersData.find(u => u.id === userId);
+            if (!user) return;
+            userToDeleteId = userId;
+            document.getElementById('deleteUserName').innerText = user.full_name;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+            userToDeleteId = null;
+        }
+
+        function executeDeleteUser() {
+            if (!userToDeleteId) return;
+            const idx = usersData.findIndex(u => u.id === userToDeleteId);
+            if (idx !== -1) {
+                const deletedName = usersData[idx].full_name;
+                usersData.splice(idx, 1);
+                saveUsersToStorage();
+                showToast(`ลบบัญชีผู้ใช้ ${deletedName} ออกจากระบบแล้ว`, 'warning');
+                filterUsers();
+            }
+            closeDeleteModal();
+        }
+
+        function saveUsersToStorage() {
+            localStorage.setItem('pet_clinic_users', JSON.stringify(usersData));
+        }
+
+        function loadClinicDataIntoForm() {
+            document.getElementById('clinicNameInput').value = clinicData.name || '';
+            document.getElementById('clinicTaxIdInput').value = clinicData.tax_id || '';
+            document.getElementById('clinicPhoneInput').value = clinicData.phone || '';
+            document.getElementById('clinicEmailInput').value = clinicData.email || '';
+            document.getElementById('clinicHoursInput').value = clinicData.opening_hours || '';
+            document.getElementById('clinicAddressInput').value = clinicData.address || '';
+            updateClinicLivePreview();
+        }
+
+        function updateClinicLivePreview() {
+            const name = document.getElementById('clinicNameInput').value || 'Pet Care Clinic';
+            const address = document.getElementById('clinicAddressInput').value || '123/45 ถนนพหลโยธิน แขวงอนุสาวรีย์...';
+            const phone = document.getElementById('clinicPhoneInput').value || '02-123-4567';
+            const taxId = document.getElementById('clinicTaxIdInput').value || '0105560000000';
+            const hours = document.getElementById('clinicHoursInput').value || '09:00 - 20:00';
+
+            // Sync Header Brand
+            document.getElementById('navHeaderClinicName').innerText = name.split('(')[0].trim();
+
+            // Sync Document Previews
+            document.getElementById('prevClinicName').innerText = name;
+            document.getElementById('prevClinicAddress').innerText = address;
+            document.getElementById('prevClinicPhone').innerText = phone;
+            document.getElementById('prevClinicTaxId').innerText = taxId;
+            document.getElementById('prevClinicHours').innerText = hours;
+
+            document.getElementById('prevAppClinicName').innerText = name;
+            document.getElementById('prevAppClinicPhone').innerText = "โทร: " + phone;
+        }
+
+        function setPreviewMode(mode) {
+            const invoiceContent = document.getElementById('invoicePreviewContent');
+            const appointmentContent = document.getElementById('appointmentPreviewContent');
+            const prevInvoiceBtn = document.getElementById('prevInvoiceBtn');
+            const prevAppointBtn = document.getElementById('prevAppointBtn');
+
+            if (mode === 'invoice') {
+                invoiceContent.classList.remove('hidden');
+                appointmentContent.classList.add('hidden');
+                prevInvoiceBtn.className = "flex-1 py-1.5 rounded-lg text-center bg-clinic-600 text-white shadow";
+                prevAppointBtn.className = "flex-1 py-1.5 rounded-lg text-center text-slate-400 hover:text-white";
+            } else {
+                invoiceContent.classList.add('hidden');
+                appointmentContent.classList.remove('hidden');
+                prevAppointBtn.className = "flex-1 py-1.5 rounded-lg text-center bg-clinic-600 text-white shadow";
+                prevInvoiceBtn.className = "flex-1 py-1.5 rounded-lg text-center text-slate-400 hover:text-white";
+            }
+        }
+
+        function handleSaveClinic(e) {
+            e.preventDefault();
+            clinicData = {
+                name: document.getElementById('clinicNameInput').value.trim(),
+                tax_id: document.getElementById('clinicTaxIdInput').value.trim(),
+                phone: document.getElementById('clinicPhoneInput').value.trim(),
+                email: document.getElementById('clinicEmailInput').value.trim(),
+                opening_hours: document.getElementById('clinicHoursInput').value.trim(),
+                address: document.getElementById('clinicAddressInput').value.trim()
+            };
+
+            localStorage.setItem('pet_clinic_info', JSON.stringify(clinicData));
+            showToast('บันทึกข้อมูลคลินิกสำเร็จ! ข้อมูลส่วนหัวเอกสารอัปเดตเรียบร้อย', 'success');
+        }
+
+        function openApiModal() {
+            document.getElementById('apiModal').classList.remove('hidden');
+        }
+
+        function closeApiModal() {
+            document.getElementById('apiModal').classList.add('hidden');
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+
+            let bgClass = "bg-emerald-800 text-white border-emerald-600";
+            let iconClass = "fa-circle-check text-emerald-300";
+
+            if (type === 'warning' || type === 'error') {
+                bgClass = "bg-red-800 text-white border-red-600";
+                iconClass = "fa-triangle-exclamation text-red-300";
+            } else if (type === 'info') {
+                bgClass = "bg-slate-800 text-white border-slate-600";
+                iconClass = "fa-circle-info text-blue-300";
+            }
+
+            toast.className = `pointer-events-auto px-4 py-3 rounded-xl border shadow-xl flex items-center space-x-3 text-xs font-medium transform transition duration-300 translate-y-2 opacity-0 ${bgClass}`;
+            toast.innerHTML = `
+                <i class="fa-solid ${iconClass} text-base"></i>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Auto Remove after 3.5s
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>

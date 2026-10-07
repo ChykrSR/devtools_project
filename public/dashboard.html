@@ -10,8 +10,6 @@
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
-  <!-- Navigation Bar -->
-  <nav class="bg-teal-700 text-white shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         
@@ -19,6 +17,21 @@
         <div class="flex items-center space-x-3">
           <span class="text-2xl">🐾</span>
           <span class="font-bold text-xl tracking-wide">Pet Care Clinic</span>
+        </div>
+
+        <!-- Menu Links -->
+          <div class="hidden md:flex items-center space-x-2">
+            <a href="dashboard.html" class="px-3 py-2 bg-teal-800 text-white text-sm font-medium rounded-lg">หน้าแรก</a>
+            <a href="pets.html" class="px-3 py-2 text-teal-100 hover:bg-teal-600 text-sm font-medium rounded-lg transition">จัดการสัตว์เลี้ยง</a>
+
+            <!-- 🟢 ปุ่มเฉพาะ Admin (ซ่อนไว้ด้วย class "hidden") -->
+            <a id="adminClinicMenu" 
+               href="manage-clinic.html" 
+               class="hidden items-center gap-2 px-3 py-2 bg-amber-400 hover:bg-amber-500 text-slate-900 text-sm font-bold rounded-lg shadow transition">
+              <i class="fa-solid fa-user-gear"></i>
+              <span>จัดการผู้ใช้ & ข้อมูลคลินิก</span>
+            </a>
+          </div>
         </div>
 
         <!-- User Profile & Logout -->
@@ -58,6 +71,42 @@
       </div>
       <div class="absolute -right-6 -bottom-8 opacity-10 text-9xl select-none pointer-events-none">🐾</div>
     </div>
+    <!-- 🏥 กล่องแสดงข้อมูลคลินิก (แสดงผลบน Dashboard) -->
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <span>🏥 ข้อมูลคลินิก</span>
+        </h2>
+        
+        <!-- 🟢 ปุ่มแก้ไขข้อมูลคลินิก (จะโชว์เฉพาะสิทธิ์ Admin) -->
+        <a id="editClinicBtn" 
+           href="manage-clinic.html" 
+           class="hidden items-center gap-1.5 text-xs bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-3 py-1.5 rounded-lg shadow transition">
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span>แก้ไขข้อมูลคลินิก</span>
+        </a>
+      </div>
+
+      <!-- แสดงรายละเอียดข้อมูลคลินิก -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+          <span class="text-xs text-slate-400 block font-medium">ชื่อคลินิก</span>
+          <span id="display-clinic-name" class="font-semibold text-slate-700">กำลังโหลด...</span>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+          <span class="text-xs text-slate-400 block font-medium">เบอร์โทรศัพท์</span>
+          <span id="display-clinic-phone" class="font-semibold text-slate-700">กำลังโหลด...</span>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+          <span class="text-xs text-slate-400 block font-medium">เวลาทำการ</span>
+          <span id="display-clinic-hours" class="font-semibold text-slate-700">กำลังโหลด...</span>
+        </div>
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+          <span class="text-xs text-slate-400 block font-medium">ที่อยู่</span>
+          <span id="display-clinic-address" class="font-semibold text-slate-700 truncate block">กำลังโหลด...</span>
+        </div>
+      </div>
+    </section>
 
     <!-- Status Overview Cards (ดึงข้อมูลจริงจาก DB) -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -91,7 +140,7 @@
         <div>
           <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">คิววันนี้</p>
           <h3 class="text-xl font-bold text-slate-800 mt-1">ไม่มีคิวที่รอดำเนินการ</h3>
-          <p class="text-xs text-slate-400 mt-1">UC-05 Track Queue Status</p>
+          <p class="text-xs text-slate-400 mt-1">Track Queue Status</p>
         </div>
         <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-2xl">
           ⏱️️
@@ -111,28 +160,27 @@
         <a href="pets.html" class="p-5 bg-white rounded-2xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition text-center group block">
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">🐕</div>
           <span class="block font-medium text-sm text-slate-700 group-hover:text-teal-600">จัดการประวัติสัตว์เลี้ยง</span>
-          <span class="text-xs text-slate-400">UC-02</span>
+
         </a>
 
         <!-- เมนูที่ 2: รอเชื่อม UC-04 -->
         <button onclick="alert('หน้า UC-04: จองคิวนัดหมาย (กำลังพัฒนา)')" class="p-5 bg-white rounded-2xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition text-center group">
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">🗓️</div>
           <span class="block font-medium text-sm text-slate-700 group-hover:text-teal-600">จองคิวนัดหมาย</span>
-          <span class="text-xs text-slate-400">UC-04</span>
+
         </button>
 
         <!-- เมนูที่ 3: รอเชื่อม UC-03 -->
         <button onclick="alert('หน้า UC-03: ประวัติสุขภาพและวัคซีน (กำลังพัฒนา)')" class="p-5 bg-white rounded-2xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition text-center group">
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">💉</div>
           <span class="block font-medium text-sm text-slate-700 group-hover:text-teal-600">ประวัติการฉีดวัคซีน</span>
-          <span class="text-xs text-slate-400">UC-03</span>
+
         </button>
 
         <!-- เมนูที่ 4: รอเชื่อม UC-06 -->
         <button onclick="alert('หน้า UC-06: ดูใบเสร็จรับเงิน (กำลังพัฒนา)')" class="p-5 bg-white rounded-2xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition text-center group">
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">🧾</div>
           <span class="block font-medium text-sm text-slate-700 group-hover:text-teal-600">ใบเสร็จ/ประวัติชำระเงิน</span>
-          <span class="text-xs text-slate-400">UC-06</span>
         </button>
 
       </div>

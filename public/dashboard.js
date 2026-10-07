@@ -1,92 +1,188 @@
-document.addEventListener('DOMContentLoaded', async () => {
-  const userJson = localStorage.getItem('user');
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. ดึงข้อมูล User จาก localStorage
+    const user = JSON.parse(localStorage.getItem('user'));
 
-  if (!userJson) {
-    alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
-    window.location.href = 'index.html';
-    return;
-  }
+    // เช็คกรณีไม่ได้ล็อกอิน
+    if (!user) {
+        window.location.href = 'index.html';
+        return;
+    }
 
-  const user = JSON.parse(userJson);
+    console.log('👉 Current User Session:', user);
 
-  // แสดงข้อมูลผู้ใช้งานบน Navigation และ Banner
-  document.getElementById('nav-user-name').innerText = user.full_name || 'สมาชิก';
-  document.getElementById('nav-user-role').innerText = user.role || 'pet_owner';
-  document.getElementById('welcome-user-name').innerText = user.full_name || 'สมาชิก';
-  document.getElementById('info-user-email').innerText = user.email || '-';
-  document.getElementById('info-user-phone').innerText = user.phone || 'ไม่ได้ระบุ';
+    // 2. แสดงผลข้อมูล User บน Header / Banner
+    const navUserName = document.getElementById('nav-user-name');
+    const navUserRole = document.getElementById('nav-user-role');
+    const welcomeUserName = document.getElementById('welcome-user-name');
+    const infoUserEmail = document.getElementById('info-user-email');
+    const infoUserPhone = document.getElementById('info-user-phone');
 
-  // โหลดข้อมูลสัตว์เลี้ยงจริงของผู้ใช้คนนี้จาก MySQL
-  await loadDashboardPets(user.id);
+    if (navUserName) navUserName.textContent = user.full_name || user.email || 'ผู้ใช้งาน';
+    if (welcomeUserName) welcomeUserName.textContent = user.full_name || 'สมาชิก';
+    if (infoUserEmail) infoUserEmail.textContent = user.email || '-';
+    if (infoUserPhone) infoUserPhone.textContent = user.phone || '-';
+
+    if (navUserRole) {
+        navUserRole.textContent = user.role || 'pet_owner';
+        if (user.role === 'admin') {
+            navUserRole.className = 'text-xs bg-amber-400 text-slate-900 font-bold px-2 py-0.5 rounded-full uppercase tracking-wider';
+        }
+    }
+
+    // 3. เปิดแสดงผลปุ่ม Admin เมื่อ user.role === 'admin'
+    const adminClinicMenu = document.getElementById('adminClinicMenu');
+    if (adminClinicMenu && user.role === 'admin') {
+        adminClinicMenu.classList.remove('hidden');
+        adminClinicMenu.classList.add('flex');
+    }
+
+    // 4. ดึง ID ของ User (รองรับทั้ง user.id และ user.user_id)
+    const userId = user.id || user.user_id;
+
+    if (!userId) {
+        console.error('❌ ไม่พบ ID ของผู้ใช้งานใน localStorage');
+        showPetError('ไม่พบข้อมูลรหัสผู้ใช้ กรุณาล็อกอินใหม่อีกครั้ง');
+        return;
+    }
+
+    // 5. โหลดรายการสัตว์เลี้ยง
+    loadUserPets(userId);
+
+    // 🟢 1. เช็คสิทธิ์ Admin เพื่อเปิดปุ่ม "แก้ไขข้อมูลคลินิก" และปุ่มบน Navbar
+    if (user.role === 'admin') {
+        const adminClinicMenu = document.getElementById('adminClinicMenu');
+        const editClinicBtn = document.getElementById('editClinicBtn');
+
+        if (adminClinicMenu) {
+            adminClinicMenu.classList.remove('hidden');
+            adminClinicMenu.classList.add('flex');
+        }
+        if (editClinicBtn) {
+            editClinicBtn.classList.remove('hidden');
+            editClinicBtn.classList.add('flex');
+        }
+    }
+
+    // 🟢 2. โหลดข้อมูลคลินิกมาแสดงบน Dashboard
+    loadClinicInfo();
+
+
 });
 
-async function loadDashboardPets(userId) {
-  const countTotalEl = document.getElementById('pet-count-total');
-  const countDetailEl = document.getElementById('pet-count-detail');
-  const listContainerEl = document.getElementById('pets-list-container');
+// ฟังก์ชันดึงสัตว์เลี้ยงจาก Backend API
+async function loadUserPets(userId) {
+    const container = document.getElementById('pets-list-container');
+    const totalCountEl = document.getElementById('pet-count-total');
+    const detailCountEl = document.getElementById('pet-count-detail');
 
-  try {
-    const response = await fetch(`/api/pets/user/${userId}`);
-    const data = await response.json();
+    try {
+        console.log(`📡 Fetching pets for userId: ${userId}...`);
+        const response = await fetch(`/api/pets/user/${userId}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP Error status: ${response.status}`);
+        }
 
-    if (data.success) {
-      const pets = data.pets || [];
+        const result = await response.json();
+        console.log('✅ Pets API Response:', result);
 
-      // 1. คำนวณจำนวณสุนัข/แมว/สัตว์อื่นๆ
-      const dogCount = pets.filter(p => p.type === 'dog').length;
-      const catCount = pets.filter(p => p.type === 'cat').length;
-      const otherCount = pets.length - (dogCount + catCount);
+        // 🟢 ดึงข้อมูลจาก result.pets หรือ result.data ให้รองรับทั้ง 2 แบบ
+        const pets = result.pets || result.data || [];
 
-      // 2. อัปเดตตัวเลขในการ์ดสรุปผล
-      countTotalEl.innerText = `${pets.length} ตัว`;
-      let detailText = `สุนัข ${dogCount} | แมว ${catCount}`;
-      if (otherCount > 0) detailText += ` | อื่นๆ ${otherCount}`;
-      countDetailEl.innerText = detailText;
+        if (result.success && Array.isArray(pets) && pets.length > 0) {
+            
+            // นับจำนวนแยกประเภท
+            const dogs = pets.filter(p => p.type === 'dog').length;
+            const cats = pets.filter(p => p.type === 'cat').length;
+            const others = pets.length - (dogs + cats);
 
-      // 3. Render แสดงรายการสัตว์เลี้ยงในหน้าจอ
-      if (pets.length === 0) {
-        listContainerEl.innerHTML = `
-          <div class="col-span-full py-8 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-            <p class="text-slate-500 text-sm">ยังไม่มีประวัติสัตว์เลี้ยงในระบบ</p>
-            <a href="pets.html" class="inline-block mt-2 text-xs text-teal-600 hover:underline font-semibold">+ เพิ่มสัตว์เลี้ยงตัวแรกของคุณ</a>
-          </div>
-        `;
-        return;
-      }
+            if (totalCountEl) totalCountEl.textContent = pets.length;
+            if (detailCountEl) detailCountEl.textContent = `สุนัข ${dogs} | แมว ${cats}${others > 0 ? ` | อื่นๆ ${others}` : ''}`;
 
-      const typeIcons = { dog: '🐶', cat: '🐱', bird: '🦜', rabbit: '🐰', other: '🐾' };
-      const typeNames = { dog: 'สุนัข', cat: 'แมว', bird: 'นก', rabbit: 'กระต่าย', other: 'อื่นๆ' };
+            // Render การ์ดสัตว์เลี้ยง
+            container.innerHTML = pets.map(pet => `
+                <div class="p-4 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="text-3xl">${getPetEmoji(pet.type)}</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800">${escapeHtml(pet.name)}</h4>
+                            <p class="text-xs text-slate-500">${escapeHtml(pet.breed || 'ไม่ระบุสายพันธุ์')} • ${pet.gender === 'male' ? 'ผู้' : pet.gender === 'female' ? 'เมีย' : 'ไม่ระบุ'}</p>
+                        </div>
+                    </div>
+                    <a href="pets.html" class="text-xs text-teal-600 font-semibold hover:underline">แก้ไข</a>
+                </div>
+            `).join('');
 
-      listContainerEl.innerHTML = pets.map(pet => `
-        <div class="p-4 border rounded-xl flex items-center justify-between bg-slate-50 hover:bg-slate-100/80 transition">
-          <div class="flex items-center space-x-4">
-            <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center text-2xl">
-              ${typeIcons[pet.type] || '🐾'}
-            </div>
-            <div>
-              <h4 class="font-bold text-slate-800">${pet.name}</h4>
-              <p class="text-xs text-slate-500">${typeNames[pet.type] || 'สัตว์เลี้ยง'} • ${pet.breed || 'ไม่ระบุสายพันธุ์'} (${pet.age || 'ไม่ระบุอายุ'})</p>
-              <span class="inline-block mt-1 text-[10px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded font-medium">
-                น้ำหนัก ${pet.weight > 0 ? pet.weight + ' กก.' : 'ไม่ได้ระบุ'}
-              </span>
-            </div>
-          </div>
-          <a href="pets.html" class="text-xs bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-slate-600 hover:text-teal-600 font-medium transition">
-            จัดการ
-          </a>
-        </div>
-      `).join('');
+        } else {
+            if (totalCountEl) totalCountEl.textContent = '0';
+            if (detailCountEl) detailCountEl.textContent = 'สุนัข 0 | แมว 0';
+            container.innerHTML = `
+                <div class="col-span-full py-6 text-center text-slate-400 border border-dashed rounded-xl">
+                    ยังไม่มีข้อมูลสัตว์เลี้ยง <a href="pets.html" class="text-teal-600 font-semibold underline">คลิกเพิ่มสัตว์เลี้ยง</a>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('❌ Error loading pets:', error);
+        showPetError('ไม่สามารถดึงข้อมูลสัตว์เลี้ยงได้');
     }
-  } catch (err) {
-    console.error('Error loading dashboard pets:', err);
-    countTotalEl.innerText = '0 ตัว';
-    countDetailEl.innerText = 'เกิดข้อผิดพลาดในการดึงข้อมูล';
-  }
+}
+
+// ฟังก์ชันแสดงข้อความเมื่อเกิด Error
+function showPetError(message) {
+    const container = document.getElementById('pets-list-container');
+    const totalCountEl = document.getElementById('pet-count-total');
+    const detailCountEl = document.getElementById('pet-count-detail');
+
+    if (totalCountEl) totalCountEl.textContent = '0';
+    if (detailCountEl) detailCountEl.textContent = 'เกิดข้อผิดพลาด';
+    if (container) {
+        container.innerHTML = `<div class="col-span-full text-center text-red-500 py-4 font-medium">${message}</div>`;
+    }
+}
+
+// Utility Helpers
+function getPetEmoji(type) {
+    switch (type) {
+        case 'cat': return '🐱';
+        case 'bird': return '🦜';
+        case 'rabbit': return '🐰';
+        case 'other': return '🐾';
+        default: return '🐶';
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return text.replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+    });
+}
+
+async function loadClinicInfo() {
+    try {
+        const response = await fetch('/api/clinic');
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            const clinic = result.data;
+            
+            const nameEl = document.getElementById('display-clinic-name');
+            const phoneEl = document.getElementById('display-clinic-phone');
+            const hoursEl = document.getElementById('display-clinic-hours');
+            const addressEl = document.getElementById('display-clinic-address');
+
+            if (nameEl) nameEl.textContent = clinic.name || 'Pet Care Clinic';
+            if (phoneEl) phoneEl.textContent = clinic.phone || '-';
+            if (hoursEl) hoursEl.textContent = clinic.opening_hours || '-';
+            if (addressEl) addressEl.textContent = clinic.address || '-';
+        }
+      } catch (error) {
+        console.error('❌ Error loading clinic info:', error);
+    }
 }
 
 function handleLogout() {
-  if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
     localStorage.removeItem('user');
     window.location.href = 'index.html';
-  }
 }

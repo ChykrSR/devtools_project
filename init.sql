@@ -36,3 +36,30 @@ INSERT IGNORE INTO users (id, full_name, email, password, phone, role) VALUES
 INSERT IGNORE INTO pets (id, user_id, name, type, breed, age, gender, weight, notes) VALUES
 (1, 2, 'โคล่า', 'dog', 'โกลเด้น รีทรีฟเวอร์', '3 ปี', 'male', 28.50, 'แพ้อาหารทะเล'),
 (2, 2, 'ส้มส้ม', 'cat', 'เปอร์เซีย', '1 ปี 6 เดือน', 'female', 4.20, 'ทำหมันแล้ว');
+
+ALTER TABLE users ADD COLUMN is_active TINYINT(1) DEFAULT 1 AFTER role;
+
+-- 3. Clinic Info Table (UC-11)
+CREATE TABLE IF NOT EXISTS clinic_info (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(150) NOT NULL,
+    address TEXT,
+    phone VARCHAR(50),
+    email VARCHAR(100),
+    tax_id VARCHAR(50),
+    opening_hours VARCHAR(255),
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Seed ข้อมูลเริ่มต้นของคลินิก
+INSERT INTO clinic_info (id, name, address, phone, email, tax_id, opening_hours)
+VALUES (
+    1, 
+    'Pet Care Clinic', 
+    '123/45 ถนนพหลโยธิน แขวงอนุสาวรีย์ เขตบางเขน กรุงเทพฯ 10220', 
+    '02-123-4567', 
+    'contact@petcareclinic.com', 
+    '0105560000000', 
+    'จันทร์ - อาทิตย์: 09:00 - 20:00 น.'
+)
+ON DUPLICATE KEY UPDATE id=1;

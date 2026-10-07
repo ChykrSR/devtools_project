@@ -194,6 +194,105 @@ app.delete('/api/pets/:id', async (req, res) => {
   }
 });
 
+// ==========================================
+// UC-11: User & Clinic Management APIs
+// ==========================================
+
+// 1. ดึงรายการผู้ใช้งานทั้งหมด (รองรับ Search & Filter Role)
+app.get('/api/users', async (req, res) => {
+    try {
+        const { role, search } = req.query;
+        let query = 'SELECT id, full_name, email, phone, role, is_active, created_at FROM users WHERE 1=1';
+        const params = [];
+
+        if (role) {
+            query += ' AND role = ?';
+            params.push(role);
+        }
+        if (search) {
+            query += ' AND (full_name LIKE ? OR email LIKE ? OR phone LIKE ?)';
+            params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+        }
+
+        query += ' ORDER BY id DESC';
+        const [users] = await db.query(query, params);
+
+        res.json({ success: true, message: 'Fetch users successfully', data: users });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message, data: null });
+    }
+});
+
+// 2. เพิ่มผู้ใช้ใหม่โดย Admin
+app.post('/api/users', async (req, res) => {
+    try {
+        const { full_name, email, password, phone, role } = req.body;
+        if (!full_name || !email || !password) {
+            return res.status(400).json({ success: false, message: 'Missing required fields', data: null });
+        }
+
+        const [existing] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+        if (existing.length > 0) {
+            return res.status(400).json({ success: false, message: 'Email already exists', data: null });
+        }
+
+        const [result] = await db.query(
+            'INSERT INTO users (full_name, email, password, phone, role) VALUES (?, ?, ?, ?, ?)',
+            [full_name, email, password, phone || null, role || 'pet_owner']
+        );
+
+        res.status(201).json({ success: true, message: 'User created successfully', data: { id: result.insertId } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message, data: null });
+    }
+});
+
+// 3. แก้ไขข้อมูลผู้ใช้
+app.put('/api/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { full_name, email, phone, role, is_active } = req.body;
+
+        await db.query(
+            'UPDATE users SET full_name = ?, email = ?, phone = ?, role = ?, is_active = ? WHERE id = ?',
+            [full_name, email, phone, role, is_active, id]
+        );
+
+        res.json({ success: true, message: 'User updated successfully', data: null });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message, data: null });
+    }
+});
+
+// 4. ดึงข้อมูลคลินิก
+app.get('/api/clinic', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM clinic_info WHERE id = 1');
+        const clinic = rows[0] || {};
+        res.json({ success: true, message: 'Fetch clinic info successfully', data: clinic });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message, data: null });
+    }
+});
+
+// 5. อัปเดตข้อมูลคลินิก
+app.put('/api/clinic', async (req, res) => {
+    try {
+        const { name, address, phone, email, tax_id, opening_hours } = req.body;
+        
+        await db.query(
+            `UPDATE clinic_info 
+             SET name = ?, address = ?, phone = ?, email = ?, tax_id = ?, opening_hours = ? 
+             WHERE id = 1`,
+            [name, address, phone, email, tax_id, opening_hours]
+        );
+
+        res.json({ success: true, message: 'Clinic info updated successfully', data: null });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message, data: null });
+    }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
