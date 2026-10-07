@@ -30,6 +30,8 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+      # 🟢 เพิ่มบรรทัดนี้เพื่อส่งไฟล์ init.sql เข้าไปรันตอนสร้าง Database ครั้งแรก
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
       interval: 5s
