@@ -206,21 +206,23 @@ app.get('/health', (req, res) => {
 // 1. ดึงรายการผู้ใช้งานทั้งหมด (รองรับ Search & Filter Role)
 app.get('/api/users', async (req, res) => {
     try {
-        const { role, search } = req.query;
-        let query = 'SELECT id, full_name, email, phone, role, is_active, created_at FROM users WHERE 1=1';
+        const { search, role } = req.query;
+        let sql = 'SELECT id, full_name, email, phone, role, is_active, created_at FROM users WHERE 1=1';
         const params = [];
 
-        if (role) {
-            query += ' AND role = ?';
+        if (role && role !== 'all') {
+            sql += ' AND role = ?';
             params.push(role);
         }
+
         if (search) {
-            query += ' AND (full_name LIKE ? OR email LIKE ? OR phone LIKE ?)';
-            params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+            sql += ' AND (full_name LIKE ? OR email LIKE ? OR phone LIKE ?)';
+            const searchKeyword = `%${search}%`;
+            params.push(searchKeyword, searchKeyword, searchKeyword);
         }
 
-        query += ' ORDER BY id DESC';
-        const [users] = await db.query(query, params);
+        sql += ' ORDER BY id DESC';
+        const [users] = await db.query(sql, params);
 
         res.json({ success: true, message: 'Fetch users successfully', data: users });
     } catch (error) {
@@ -230,23 +232,24 @@ app.get('/api/users', async (req, res) => {
 
 // 2. เพิ่มผู้ใช้ใหม่โดย Admin
 app.post('/api/users', async (req, res) => {
-    try {
+   try {
         const { full_name, email, password, phone, role } = req.body;
+        
         if (!full_name || !email || !password) {
-            return res.status(400).json({ success: false, message: 'Missing required fields', data: null });
+            return res.status(400).json({ success: false, message: 'กรุณากรอกข้อมูลสำคัญให้ครบถ้วน' });
         }
 
         const [existing] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
         if (existing.length > 0) {
-            return res.status(400).json({ success: false, message: 'Email already exists', data: null });
+            return res.status(400).json({ success: false, message: 'อีเมลนี้ถูกใช้งานแล้วในระบบ' });
         }
 
         const [result] = await db.query(
-            'INSERT INTO users (full_name, email, password, phone, role) VALUES (?, ?, ?, ?, ?)',
-            [full_name, email, password, phone || null, role || 'pet_owner']
+            'INSERT INTO users (full_name, email, password, phone, role, is_active) VALUES (?, ?, ?, ?, ?, 1)',
+            [full_name, email, password, phone || '', role || 'pet_owner']
         );
 
-        res.status(201).json({ success: true, message: 'User created successfully', data: { id: result.insertId } });
+        res.json({ success: true, message: 'เพิ่มผู้ใช้งานเรียบร้อยแล้ว', data: { id: result.insertId } });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message, data: null });
     }
@@ -263,7 +266,7 @@ app.put('/api/users/:id', async (req, res) => {
             [full_name, email, phone, role, is_active, id]
         );
 
-        res.json({ success: true, message: 'User updated successfully', data: null });
+        res.json({ success: true, message: 'อัปเดตข้อมูลผู้ใช้เรียบร้อยแล้ว', data: null });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message, data: null });
     }
@@ -271,7 +274,7 @@ app.put('/api/users/:id', async (req, res) => {
 
 // 4. ดึงข้อมูลคลินิก
 app.get('/api/clinic', async (req, res) => {
-    try {
+   try {
         const [rows] = await db.query('SELECT * FROM clinic_info WHERE id = 1');
         const clinic = rows[0] || {};
         res.json({ success: true, message: 'Fetch clinic info successfully', data: clinic });
@@ -281,21 +284,18 @@ app.get('/api/clinic', async (req, res) => {
 });
 
 // 5. อัปเดตข้อมูลคลินิก
-app.put('/api/clinic', async (req, res) => {
-    try {
-        const { name, address, phone, email, tax_id, opening_hours } = req.body;
-        
-        await db.query(
-            `UPDATE clinic_info 
-             SET name = ?, address = ?, phone = ?, email = ?, tax_id = ?, opening_hours = ? 
-             WHERE id = 1`,
-            [name, address, phone, email, tax_id, opening_hours]
-        );
-
-        res.json({ success: true, message: 'Clinic info updated successfully', data: null });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message, data: null });
+app.get('/api/clinic', async (req, res) => {
+  try {
+    const [rows] = await db.execute('SELECT * FROM clinic_info WHERE id = 1');
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลคลินิก' });
     }
+    // ส่งออกคีย์ชื่อ clinic
+    res.json({ success: true, clinic: rows[0] });
+  } catch (error) {
+    console.error('Fetch Clinic Error:', error);
+    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการดึงข้อมูลคลินิก' });
+  }
 });
 
 app.listen(PORT, () => {
