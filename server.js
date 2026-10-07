@@ -194,6 +194,11 @@ app.delete('/api/pets/:id', async (req, res) => {
   }
 });
 
+//health check endpoint ให้ jenkins
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', message: 'Server is healthy' });
+});
+
 // ==========================================
 // UC-11: User & Clinic Management APIs
 // ==========================================
