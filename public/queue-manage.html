@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการคิวและนัดหมาย (UC-07)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Kanit', sans-serif, system-ui; }
+        body { background-color: #f4f6f8; min-height: 100vh; }
+        .navbar { background-color: #00897b; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .navbar a { color: white; text-decoration: none; font-size: 14px; }
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 16px; }
+        .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        .bg-pending { background-color: #fff3cd; color: #856404; }
+        .bg-calling { background-color: #cce5ff; color: #004085; }
+        .bg-completed { background-color: #d4edda; color: #155724; }
+        .bg-cancelled { background-color: #f8d7da; color: #721c24; }
+        .btn { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; color: white; font-weight: 500; }
+        .btn-call { background-color: #0288d1; }
+        .btn-rx { background-color: #2e7d32; text-decoration: none; display: inline-block; }
+        .btn-cancel { background-color: #c62828; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="dashboard.html">← กลับหน้าหลัก</a>
+        <span style="font-weight:600;">ระบบจัดการคิวและนัดหมาย (UC-07)</span>
+        <span id="userInfo" style="font-size:13px;"></span>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <div class="filter-bar">
+                <label>เลือกวันที่:</label>
+                <input type="date" id="filterDate" onchange="loadQueues()">
+                <label>สถานะ:</label>
+                <select id="filterStatus" onchange="loadQueues()">
+                    <option value="all">ทั้งหมด</option>
+                    <option value="pending">รอเรียกคิว</option>
+                    <option value="calling">กำลังเรียกคิว</option>
+                    <option value="completed">เสร็จสิ้น</option>
+                </select>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>เวลา</th>
+                        <th>เจ้าของ</th>
+                        <th>สัตว์เลี้ยง</th>
+                        <th>อาการ</th>
+                        <th>สถานะ</th>
+                        <th>การดำเนินการ</th>
+                    </tr>
+                </thead>
+                <tbody id="queueList">
+                    <tr><td colspan="6" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="queue-manage.js"></script>
+</body>
+</html>

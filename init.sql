@@ -63,3 +63,34 @@ VALUES (
     'จันทร์ - อาทิตย์: 09:00 - 20:00 น.'
 )
 ON DUPLICATE KEY UPDATE id=1;
+
+-- --------------------------------------------------------
+-- ตารางสำหรับ UC-04 & UC-07: คิวนัดหมาย (Appointments)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS appointments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    pet_id INT NOT NULL,
+    appointment_date DATE NOT NULL,
+    appointment_time TIME NOT NULL,
+    reason TEXT,
+    status ENUM('pending', 'calling', 'in_progress', 'completed', 'cancelled') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
+);
+
+-- --------------------------------------------------------
+-- ตารางสำหรับ UC-09: ประวัติการตรวจ วินิจฉัย และสั่งยา (Prescriptions)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS prescriptions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id INT NOT NULL,
+    vet_id INT NOT NULL,
+    diagnosis TEXT NOT NULL,
+    medication_details TEXT,
+    service_details TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
+    FOREIGN KEY (vet_id) REFERENCES users(id) ON DELETE CASCADE
+);
