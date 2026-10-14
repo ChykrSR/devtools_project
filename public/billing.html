@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>บิลค่ารักษาและใบเสร็จ • Pet Care Clinic</title>
+  <link rel="stylesheet" href="billing.css"><script defer src="billing.js"></script>
+</head>
+<body>
+  <header class="topbar"><a href="dashboard.html" class="brand">🐾 Pet Care Clinic</a><nav><a href="dashboard.html">กลับหน้าแรก</a><button id="logout" class="quiet" hidden>ออกจากส่วนบิล</button></nav></header>
+  <main>
+    <div class="heading"><div><p class="eyebrow">CLINIC BILLING</p><h1>บิลค่ารักษาและใบเสร็จ</h1><p class="muted">ออกบิล ติดตามยอดคงเหลือ และดูประวัติการชำระเงิน</p></div><span id="identity" class="badge"></span></div>
+    <p id="message" role="status" aria-live="polite" hidden></p>
+    <section id="login-panel" class="card login">
+      <h2>ยืนยันตัวตนเพื่อเข้าถึงเอกสาร</h2><p class="muted">ใช้บัญชีเดิมของคลินิก เซสชันส่วนบิลมีอายุ 1 ชั่วโมง</p>
+      <form id="login-form"><label>อีเมล<input id="email" type="email" required maxlength="100" autocomplete="username"></label><label>รหัสผ่าน<input id="password" type="password" required maxlength="255" autocomplete="current-password"></label><button type="submit">เข้าสู่ส่วนบิล</button></form>
+    </section>
+    <section id="workspace" hidden>
+      <div class="toolbar"><h2>รายการใบแจ้งหนี้</h2><button id="new-invoice" hidden>＋ ออกบิลค่ารักษา</button></div>
+      <form id="filter-form" class="filters card"><label class="grow">ค้นหาเอกสาร<input id="search" placeholder="เลขบิล ชื่อเจ้าของ หรือชื่อสัตว์เลี้ยง" maxlength="100"></label><button type="submit">ค้นหา</button></form>
+      <div class="card table-scroll"><table><thead><tr><th>เลขบิล / วันที่</th><th>เจ้าของ / สัตว์เลี้ยง</th><th>ยอดสุทธิ</th><th>คงเหลือ</th><th>เอกสาร</th></tr></thead><tbody id="invoice-list"></tbody></table><p id="empty" class="muted">กำลังโหลด...</p></div>
+      <button id="more" class="quiet" hidden>โหลดรายการเพิ่มเติม</button>
+    </section>
+  </main>
+  <dialog id="create-dialog"><form id="create-form">
+    <div class="toolbar"><h2>ออกบิลค่ารักษา</h2><button type="button" data-close="create-dialog" class="quiet">ปิด</button></div>
+    <p class="muted">ยืนยันแล้วใบแจ้งหนี้จะส่งเข้าบัญชีของเจ้าของสัตว์เลี้ยงที่เลือก บันทึกแล้วแก้ไขหรือลบผ่านหน้านี้ไม่ได้</p>
+    <div class="filters"><label class="grow">ค้นหาเจ้าของหรือสัตว์เลี้ยง<input id="customer-search" maxlength="100" placeholder="ค้นหาจากข้อมูลสัตว์เลี้ยงที่มีอยู่"></label><button id="find-customers" type="button" class="quiet">ค้นหา</button></div>
+    <label>เลือกสัตว์เลี้ยงและเจ้าของ (แสดงสูงสุด 100 รายการ)<select id="pet" required><option value="">เลือกสัตว์เลี้ยง</option></select></label>
+    <div class="table-scroll"><table class="items-table"><thead><tr><th>รายการค่ารักษา</th><th>จำนวน</th><th>ราคา/หน่วย (บาท)</th><th></th></tr></thead><tbody id="items"></tbody></table></div>
+    <div class="toolbar"><button id="add-item" type="button" class="quiet">＋ เพิ่มรายการ</button></div>
+    <div class="two-col"><label>ส่วนลด (บาท)<input id="discount" type="number" min="0" max="1000000" step="0.01" value="0" required></label><div class="total">ยอดสุทธิประมาณการ<strong id="preview-total">0.00 บาท</strong></div></div>
+    <label>หมายเหตุ<textarea id="note" maxlength="1000" rows="2" placeholder="เช่น ตรวจสุขภาพทั่วไป"></textarea></label>
+    <label>วิธีชำระเงินในใบแจ้งหนี้<select id="invoice-method"><option value="transfer">โอนเงิน</option><option value="cash">เงินสด</option><option value="card">บัตร</option></select></label>
+    <p id="create-error" class="error" role="alert"></p><button type="submit">ออกและส่งใบแจ้งหนี้ให้เจ้าของสัตว์เลี้ยง</button>
+  </form></dialog>
+  <dialog id="detail-dialog"><div class="toolbar no-print"><h2>รายละเอียดเอกสาร</h2><div><button id="print" class="quiet">พิมพ์ / บันทึก PDF</button><button data-close="detail-dialog" class="quiet">ปิด</button></div></div>
+    <article id="document"></article>
+    <section id="payment-history" class="no-print"></section>
+    <form id="payment-form" class="no-print" hidden><h3>บันทึกการชำระเงิน</h3><div class="two-col"><label>จำนวนเงิน (บาท)<input id="amount" type="number" min="0.01" max="1000000" step="0.01" required></label><label>วิธีชำระ<select id="method"><option value="cash">เงินสด</option><option value="transfer">โอนเงิน</option><option value="card">บัตร</option></select></label></div><label>หมายเหตุอ้างอิง<input id="reference" maxlength="200" placeholder="เลขอ้างอิงหรือหมายเหตุการชำระเงิน"></label><label class="check"><input id="payment-confirm" type="checkbox" required>ฉันตรวจสอบยอดชำระแล้ว และยืนยันให้บันทึกการชำระเงินนี้</label><p id="payment-error" class="error" role="alert"></p><button type="submit">ยืนยันบันทึกยอดและออกใบเสร็จ</button></form>
+  </dialog>
+</body>
+</html>

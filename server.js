@@ -5,6 +5,7 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use('/api/billing', express.json({ limit: '1mb' }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -18,6 +19,14 @@ const db = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0
 });
+
+// Prepare only missing billing tables; legacy routes remain independent.
+const billingReady = require('./lib/billing-schema')(db);
+app.use('/api/billing', (req, res, next) => {
+  billingReady.then(ready => ready ? next() : res.status(503).json({
+    success: false, message: 'ส่วนบิลยังไม่พร้อม กรุณาตรวจฐานข้อมูลและเริ่มเซิร์ฟเวอร์ใหม่'
+  }));
+}, require('./routes/billing')(db));
 
 // 1. API สมัครสมาชิก (Register)
 app.post('/api/auth/register', async (req, res) => {

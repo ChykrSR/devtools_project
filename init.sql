@@ -63,3 +63,41 @@ VALUES (
     'จันทร์ - อาทิตย์: 09:00 - 20:00 น.'
 )
 ON DUPLICATE KEY UPDATE id=1;
+
+-- BEGIN BILLING SCHEMA
+CREATE TABLE IF NOT EXISTS billing_invoices (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  owner_id INT NOT NULL,
+  pet_id INT NOT NULL,
+  created_by INT NOT NULL,
+  request_key VARCHAR(80) NOT NULL UNIQUE,
+  request_hash CHAR(64) NOT NULL,
+  snapshot JSON NOT NULL,
+  items JSON NOT NULL,
+  subtotal_cents INT UNSIGNED NOT NULL,
+  discount_cents INT UNSIGNED NOT NULL DEFAULT 0,
+  total_cents INT UNSIGNED NOT NULL,
+  paid_cents INT UNSIGNED NOT NULL DEFAULT 0,
+  note VARCHAR(1000) NOT NULL DEFAULT '',
+  created_at VARCHAR(24) NOT NULL,
+  INDEX billing_owner_created (owner_id, id),
+  CONSTRAINT billing_amounts CHECK (total_cents > 0 AND paid_cents <= total_cents AND subtotal_cents = total_cents + discount_cents)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS billing_payments (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  invoice_id INT NOT NULL,
+  recorded_by INT NOT NULL,
+  request_key VARCHAR(80) NOT NULL UNIQUE,
+  amount_cents INT UNSIGNED NOT NULL,
+  method ENUM('cash', 'transfer', 'card') NOT NULL,
+  reference VARCHAR(200) NOT NULL DEFAULT '',
+  is_simulated TINYINT(1) NOT NULL DEFAULT 1,
+  balance_after_cents INT UNSIGNED NOT NULL,
+  created_at VARCHAR(24) NOT NULL,
+  INDEX billing_payment_invoice (invoice_id, id),
+  CONSTRAINT billing_payment_invoice_fk FOREIGN KEY (invoice_id) REFERENCES billing_invoices(id) ON DELETE RESTRICT,
+  CONSTRAINT billing_payment_positive CHECK (amount_cents > 0),
+  CONSTRAINT billing_payment_demo_only CHECK (is_simulated = 1)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+-- END BILLING SCHEMA
