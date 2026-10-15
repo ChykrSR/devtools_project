@@ -67,6 +67,7 @@ ON DUPLICATE KEY UPDATE id=1;
 -- --------------------------------------------------------
 -- ตารางสำหรับ UC-04 & UC-07: คิวนัดหมาย (Appointments)
 -- --------------------------------------------------------
+-- BEGIN CLINICAL SCHEMA
 CREATE TABLE IF NOT EXISTS appointments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -94,6 +95,24 @@ CREATE TABLE IF NOT EXISTS prescriptions (
     FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
     FOREIGN KEY (vet_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS vaccination_records (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id INT NOT NULL,
+    pet_id INT NOT NULL,
+    recorded_by INT NOT NULL,
+    vaccine_name VARCHAR(150) NOT NULL,
+    lot_number VARCHAR(100) NOT NULL DEFAULT '',
+    administered_at DATE NOT NULL,
+    next_due_date DATE NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX vaccination_pet_date (pet_id, administered_at),
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
+    FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE,
+    FOREIGN KEY (recorded_by) REFERENCES users(id) ON DELETE CASCADE
+);
+-- END CLINICAL SCHEMA
 
 -- BEGIN BILLING SCHEMA
 CREATE TABLE IF NOT EXISTS billing_invoices (

@@ -136,16 +136,16 @@
       </div>
 
       <!-- Card 3: คิววันนี้ -->
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+      <a href="booking.html?tab=history" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between hover:border-teal-500 transition">
         <div>
           <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">คิววันนี้</p>
-          <h3 class="text-xl font-bold text-slate-800 mt-1">ไม่มีคิวที่รอดำเนินการ</h3>
-          <p class="text-xs text-slate-400 mt-1">Track Queue Status</p>
+          <h3 id="today-queue-title" class="text-lg font-bold text-slate-800 mt-1">กำลังโหลดคิววันนี้...</h3>
+          <p id="today-queue-detail" class="text-xs text-slate-400 mt-1">สถานะนัดหมายของวันนี้</p>
         </div>
         <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-2xl">
           ⏱️️
         </div>
-      </div>
+      </a>
 
     </div>
 
@@ -170,12 +170,11 @@
 
         </a>
 
-        <!-- เมนูที่ 3: รอเชื่อม UC-03 -->
-        <button onclick="alert('หน้า UC-03: ประวัติสุขภาพและวัคซีน (กำลังพัฒนา)')" class="p-5 bg-white rounded-2xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition text-center group">
+        <!-- เมนูที่ 3: UC-03 -->
+        <a href="health-record.html" class="p-5 bg-white rounded-2xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition text-center group block">
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">💉</div>
           <span class="block font-medium text-sm text-slate-700 group-hover:text-teal-600">ประวัติการฉีดวัคซีน</span>
-
-        </button>
+        </a>
 
         <!-- เมนูที่ 4: รอเชื่อม UC-06 -->
         <button onclick="window.location.href='billing.html'" class="p-5 bg-white rounded-2xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition text-center group">

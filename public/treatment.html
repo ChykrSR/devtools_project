@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>บันทึกการตรวจและสั่งยา (UC-09)</title>
+    <title>บันทึกการรักษาและวัคซีน (UC-08)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Kanit', sans-serif, system-ui; }
         body { background-color: #f4f6f8; min-height: 100vh; }
@@ -21,7 +21,7 @@
 <body>
     <div class="navbar">
         <a href="queue-manage.html">← กลับหน้าจัดการคิว</a>
-        <span style="font-weight:600;">บันทึกการวินิจฉัยและสั่งยา (UC-09)</span>
+        <span style="font-weight:600;">บันทึกประวัติการรักษาและวัคซีน (UC-08)</span>
         <span id="userInfo" style="font-size:13px;"></span>
     </div>
 
@@ -42,6 +42,35 @@
                     <label>บริการ / หัตถการเพิ่มเติม (Services)</label>
                     <textarea id="serviceDetails" rows="2" placeholder="เช่น ฉีดวัคซีนรวม, ทำแผล, ทำความสะอาดหู..."></textarea>
                 </div>
+                <fieldset class="form-group" style="border:1px solid #d1d5db;border-radius:8px;padding:14px;">
+                    <legend style="padding:0 6px;font-size:14px;font-weight:600;">ประวัติการฉีดวัคซีน</legend>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                        <input type="checkbox" id="recordVaccination" style="width:16px;height:16px;">
+                        บันทึกวัคซีนที่ฉีดในการนัดหมายนี้
+                    </label>
+                    <div id="vaccinationFields" hidden style="margin-top:14px;">
+                        <div class="form-group">
+                            <label for="vaccineName">ชื่อวัคซีน *</label>
+                            <input type="text" id="vaccineName" maxlength="150" placeholder="เช่น วัคซีนรวมสุนัข">
+                        </div>
+                        <div class="form-group">
+                            <label for="vaccineDate">วันที่ฉีด *</label>
+                            <input type="date" id="vaccineDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="vaccineLot">เลข Lot</label>
+                            <input type="text" id="vaccineLot" maxlength="100" placeholder="เลขรุ่นผลิตบนฉลากวัคซีน">
+                        </div>
+                        <div class="form-group">
+                            <label for="vaccineNextDate">กำหนดฉีดครั้งถัดไป</label>
+                            <input type="date" id="vaccineNextDate">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label for="vaccineNotes">หมายเหตุวัคซีน</label>
+                            <textarea id="vaccineNotes" rows="2" placeholder="เช่น ฉีดเข้ากล้ามเนื้อ, นัดติดตามอาการ"></textarea>
+                        </div>
+                    </div>
+                </fieldset>
                 <button type="submit" class="btn-success">💾 บันทึกการรักษาและเสร็จสิ้นคิว</button>
             </form>
         </div>
