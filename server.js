@@ -310,3 +310,125 @@ app.get('/api/clinic', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// ==========================================
+// UC-04: API สำหรับการจองคิวนัดหมาย (Booking)
+// ==========================================
+
+// ดึงรายการสัตว์เลี้ยงของ User
+app.get('/api/pets/user/:userId', (req, res) => {
+    const { userId } = req.params;
+    const sql = 'SELECT * FROM pets WHERE owner_id = ? OR user_id = ?';
+    db.query(sql, [userId, userId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'Database error' });
+        res.json({ success: true, pets: results });
+    });
+});
+
+// สร้างรายการจองคิวใหม่
+app.post('/api/appointments', (req, res) => {
+    const { user_id, pet_id, appointment_date, appointment_time, reason } = req.body;
+    const sql = 'INSERT INTO appointments (user_id, pet_id, appointment_date, appointment_time, reason) VALUES (?, ?, ?, ?, ?)';
+    db.query(sql, [user_id, pet_id, appointment_date, appointment_time, reason], (err, result) => {
+        if (err) return res.status(500).json({ success: false, message: 'จองคิวไม่สำเร็จ: ' + err.message });
+        res.json({ success: true, message: 'จองคิวสำเร็จเรียบร้อยแล้ว!' });
+    });
+});
+
+// ดึงรายการจองคิวเฉพาะของ User
+app.get('/api/appointments/user/:userId', (req, res) => {
+    const { userId } = req.params;
+    const sql = `
+        SELECT a.*, p.name AS pet_name, p.type AS pet_type 
+        FROM appointments a
+        JOIN pets p ON a.pet_id = p.id
+        WHERE a.user_id = ?
+        ORDER BY a.appointment_date DESC, a.appointment_time DESC
+    `;
+    db.query(sql, [userId], (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'Database error' });
+        res.json({ success: true, appointments: results });
+    });
+});
+
+// ==========================================
+// UC-07: API สำหรับจัดการคิว (Staff/Vet)
+// ==========================================
+
+// ดึงรายการคิวทั้งหมดตาม วันที่ และ สถานะ
+app.get('/api/appointments', (req, res) => {
+    const { date, status } = req.query;
+    let sql = `
+        SELECT a.*, p.name AS pet_name, p.type AS pet_type, u.full_name AS owner_name, u.phone AS owner_phone
+        FROM appointments a
+        JOIN pets p ON a.pet_id = p.id
+        JOIN users u ON a.user_id = u.id
+        WHERE 1=1
+    `;
+    const params = [];
+
+    if (date) {
+        sql += ' AND a.appointment_date = ?';
+        params.push(date);
+    }
+    if (status && status !== 'all') {
+        sql += ' AND a.status = ?';
+        params.push(status);
+    }
+
+    sql += ' ORDER BY a.appointment_time ASC';
+
+    db.query(sql, params, (err, results) => {
+        if (err) return res.status(500).json({ success: false, message: 'Database error' });
+        res.json({ success: true, appointments: results });
+    });
+});
+
+// ดึงรายละเอียดคิวนัดหมายรายอัน
+app.get('/api/appointments/:id', (req, res) => {
+    const { id } = req.params;
+    const sql = `
+        SELECT a.*, p.name AS pet_name, p.type AS pet_type, u.full_name AS owner_name
+        FROM appointments a
+        JOIN pets p ON a.pet_id = p.id
+        JOIN users u ON a.user_id = u.id
+        WHERE a.id = ?
+    `;
+    db.query(sql, [id], (err, results) => {
+        if (err || results.length === 0) return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลนัดหมาย' });
+        res.json({ success: true, appointment: results[0] });
+    });
+});
+
+// อัปเดตสถานะคิว
+app.put('/api/appointments/:id/status', (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    const sql = 'UPDATE appointments SET status = ? WHERE id = ?';
+    db.query(sql, [status, id], (err, result) => {
+        if (err) return res.status(500).json({ success: false, message: 'อัปเดตสถานะไม่สำเร็จ' });
+        res.json({ success: true, message: 'อัปเดตสถานะคิวสำเร็จ' });
+    });
+});
+
+// ==========================================
+// UC-09: API สำหรับการวินิจฉัยและสั่งยา (Vet)
+// ==========================================
+
+// บันทึกการรักษา / สั่งยา
+app.post('/api/prescriptions', (req, res) => {
+    const { appointment_id, vet_id, diagnosis, medication_details, service_details } = req.body;
+
+    const sqlPrescription = 'INSERT INTO prescriptions (appointment_id, vet_id, diagnosis, medication_details, service_details) VALUES (?, ?, ?, ?, ?)';
+    
+    db.query(sqlPrescription, [appointment_id, vet_id, diagnosis, medication_details, service_details], (err, result) => {
+        if (err) return res.status(500).json({ success: false, message: 'บันทึกการรักษาไม่สำเร็จ: ' + err.message });
+
+        // เมื่อบันทึกการรักษาเสร็จ ให้เปลี่ยนสถานะคิวเป็น 'completed' ทันที
+        const sqlUpdateAppointment = "UPDATE appointments SET status = 'completed' WHERE id = ?";
+        db.query(sqlUpdateAppointment, [appointment_id], (err2) => {
+            if (err2) console.error('Error updating status:', err2);
+            res.json({ success: true, message: 'บันทึกการรักษาและปิดคิวเรียบร้อยแล้ว!' });
+        });
+    });
+});

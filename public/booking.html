@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จองคิวนัดหมาย - Pet Care Clinic</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts Prompt -->
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style> body { font-family: 'Prompt', sans-serif; } </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+  <!-- 🟢 Navigation Bar (แถบด้านบนสไตล์ UC-02) -->
+  <nav class="bg-teal-800 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- ฝั่งซ้าย: ปุ่มกลับหน้าหลัก + ชื่อโมดูล -->
+        <div class="flex items-center space-x-4">
+          <a href="dashboard.html" class="text-teal-200 hover:text-white text-sm font-medium transition flex items-center gap-1">
+            ← กลับหน้าหลัก
+          </a>
+          <div class="h-4 w-px bg-teal-600 hidden sm:block"></div>
+          <div class="flex items-center space-x-2 font-bold text-base sm:text-lg">
+            <span>🐾</span>
+            <span>จองคิวนัดหมาย (UC-04)</span>
+          </div>
+        </div>
+
+        <!-- ฝั่งขวา: ชื่อผู้ใช้ + ปุ่มออกจากระบบ -->
+        <div class="flex items-center space-x-3">
+          <span id="nav-user-name" class="text-sm font-medium text-teal-100 hidden sm:inline">
+            กำลังโหลด...
+          </span>
+          <button onclick="handleLogout()" class="bg-teal-900/60 hover:bg-red-600 border border-teal-600 text-white text-xs px-3 py-1.5 rounded-lg transition shadow-sm">
+            ออกจากระบบ
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    
+    <!-- Card Container -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      
+      <!-- Tabs Navigation -->
+      <div class="flex border-b border-slate-100 bg-slate-50/50">
+        <button id="tabNewBooking" onclick="switchTab('new')" class="flex-1 py-4 text-center font-semibold text-teal-700 border-b-2 border-teal-600 transition flex items-center justify-center gap-2 text-sm">
+          🗓️ จองคิวใหม่
+        </button>
+        <button id="tabHistory" onclick="switchTab('history')" class="flex-1 py-4 text-center font-medium text-slate-500 hover:text-slate-700 transition flex items-center justify-center gap-2 text-sm">
+          📋 ประวัติและสถานะคิว
+        </button>
+      </div>
+
+      <div class="p-6 sm:p-8">
+        
+        <!-- SECTION 1: ฟอร์มจองคิวใหม่ -->
+        <div id="viewNewBooking" class="space-y-6">
+          <form id="bookingForm" onsubmit="handleCreateBooking(event)" class="space-y-4">
+            
+            <!-- เลือกสัตว์เลี้ยง -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">เลือกร้าน / สัตว์เลี้ยง *</label>
+              <select id="petSelect" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-teal-500 bg-slate-50">
+                <option value="">-- กำลังโหลดรายการสัตว์เลี้ยง --</option>
+              </select>
+            </div>
+
+            <!-- วันและเวลา -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">วันที่นัดหมาย *</label>
+                <input type="date" id="appointmentDate" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-teal-500 bg-slate-50">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">เวลานัดหมาย *</label>
+                <input type="time" id="appointmentTime" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-teal-500 bg-slate-50">
+              </div>
+            </div>
+
+            <!-- อาการเบื้องต้น -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">อาการเบื้องต้น / สาเหตุการนัดหมาย</label>
+              <textarea id="reason" rows="3" placeholder="ระบุอาการเบื้องต้น..." class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-teal-500 bg-slate-50"></textarea>
+            </div>
+
+            <!-- ปุ่มบันทึก -->
+            <button type="submit" class="w-full py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm rounded-xl shadow-sm transition">
+              ยืนยันการจองคิว
+            </button>
+          </form>
+        </div>
+
+        <!-- SECTION 2: ตารางประวัติและสถานะคิว -->
+        <div id="viewHistory" class="hidden space-y-4">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+              <thead class="bg-slate-50 text-xs font-semibold text-slate-500 uppercase">
+                <tr>
+                  <th class="px-4 py-3 rounded-l-xl">วัน/เวลา</th>
+                  <th class="px-4 py-3">สัตว์เลี้ยง</th>
+                  <th class="px-4 py-3">อาการ</th>
+                  <th class="px-4 py-3">สถานะ</th>
+                  <th class="px-4 py-3 rounded-r-xl text-center">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="bookingHistoryTable">
+                <tr>
+                  <td colspan="5" class="text-center py-6 text-slate-400">กำลังโหลดประวัติการจอง...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="booking.js"></script>
+</body>
+</html>
