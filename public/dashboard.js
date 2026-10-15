@@ -47,6 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 5. โหลดรายการสัตว์เลี้ยง
     loadUserPets(userId);
+    loadTodayQueue(userId);
+    setInterval(() => {
+        if (!document.hidden) loadTodayQueue(userId);
+    }, 5000);
 
     // 🟢 1. เช็คสิทธิ์ Admin เพื่อเปิดปุ่ม "แก้ไขข้อมูลคลินิก" และปุ่มบน Navbar
     if (user.role === 'admin') {
@@ -68,6 +72,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 });
+
+async function loadTodayQueue(userId) {
+    const title = document.getElementById('today-queue-title');
+    const detail = document.getElementById('today-queue-detail');
+    if (!title || !detail) return;
+
+    try {
+        const response = await fetch(`/api/appointments/user/${encodeURIComponent(userId)}`, { cache: 'no-store' });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || 'โหลดสถานะคิวไม่สำเร็จ');
+
+        const now = new Date();
+        const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const todayAppointments = (result.appointments || []).filter(appointment =>
+            String(appointment.appointment_date).slice(0, 10) === todayKey
+        );
+        const activeAppointments = todayAppointments.filter(appointment =>
+            ['pending', 'calling', 'in_progress'].includes(appointment.status)
+        );
+
+        if (!activeAppointments.length) {
+            if (todayAppointments.some(appointment => appointment.status === 'completed')) {
+                title.textContent = 'เสร็จสิ้นแล้ว';
+                detail.textContent = `วันนี้ตรวจเสร็จ ${todayAppointments.filter(appointment => appointment.status === 'completed').length} คิว`;
+            } else if (todayAppointments.length) {
+                title.textContent = 'ไม่มีคิวที่กำลังดำเนินการ';
+                detail.textContent = 'คิววันนี้ถูกยกเลิกแล้ว';
+            } else {
+                title.textContent = 'ไม่มีคิววันนี้';
+                detail.textContent = 'ยังไม่มีนัดหมายสำหรับวันนี้';
+            }
+            return;
+        }
+
+        const currentQueue = activeAppointments.find(appointment => appointment.status === 'calling')
+            || activeAppointments.find(appointment => appointment.status === 'in_progress')
+            || activeAppointments[0];
+        const statusLabels = {
+            pending: 'รอเรียกคิว',
+            calling: 'กำลังเรียกคิว',
+            in_progress: 'กำลังตรวจ'
+        };
+        const time = String(currentQueue.appointment_time || '').slice(0, 5);
+        const queuePosition = currentQueue.queue_position ? `คิวที่ ${currentQueue.queue_position}` : statusLabels[currentQueue.status];
+
+        title.textContent = statusLabels[currentQueue.status] || 'มีคิววันนี้';
+        detail.textContent = `${currentQueue.pet_name || 'สัตว์เลี้ยง'} · ${time} น. · ${queuePosition}${activeAppointments.length > 1 ? ` · อีก ${activeAppointments.length - 1} คิว` : ''}`;
+    } catch (error) {
+        title.textContent = 'โหลดสถานะคิวไม่ได้';
+        detail.textContent = error.message || 'กรุณาลองใหม่อีกครั้ง';
+    }
+}
 
 // ฟังก์ชันดึงสัตว์เลี้ยงจาก Backend API
 async function loadUserPets(userId) {

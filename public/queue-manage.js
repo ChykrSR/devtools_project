@@ -1,25 +1,30 @@
 let currentUser = null;
 
-/*document.addEventListener('DOMContentLoaded', () => {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) {
-        alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+    } catch (error) {
+        currentUser = null;
+    }
+
+    if (!currentUser) {
         window.location.href = 'index.html';
         return;
     }
-    currentUser = JSON.parse(userStr);
-    document.getElementById('userInfo').innerText = `${currentUser.full_name} (${currentUser.role})`;
-    document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
 
+    document.getElementById('userInfo').textContent = `${currentUser.full_name || 'ผู้ใช้งาน'} (${currentUser.role || 'staff'})`;
+    const today = new Date();
+    document.getElementById('filterDate').value = new Date(today.getTime() - today.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
     loadQueues();
-});*/
+});
 
 async function loadQueues() {
     const date = document.getElementById('filterDate').value;
     const status = document.getElementById('filterStatus').value;
 
     try {
-        const res = await fetch(`/api/appointments?date=${date}&status=${status}`);
+        const res = await fetch(`/api/appointments?date=${encodeURIComponent(date)}&status=${encodeURIComponent(status)}`);
+        if (!res.ok) throw new Error('ไม่สามารถโหลดคิวได้');
         const data = await res.json();
         const tbody = document.getElementById('queueList');
 
@@ -31,6 +36,7 @@ async function loadQueues() {
         const statusMap = {
             'pending': '<span class="badge bg-pending">รอเรียกคิว</span>',
             'calling': '<span class="badge bg-calling">กำลังเรียกคิว</span>',
+            'in_progress': '<span class="badge bg-calling">กำลังตรวจ</span>',
             'completed': '<span class="badge bg-completed">เสร็จสิ้น</span>',
             'cancelled': '<span class="badge bg-cancelled">ยกเลิก</span>'
         };
@@ -51,7 +57,10 @@ async function loadQueues() {
                 </td>
             </tr>
         `).join('');
-    } catch (err) { console.error(err); }
+    } catch (err) {
+        console.error(err);
+        document.getElementById('queueList').innerHTML = '<tr><td colspan="6" style="text-align:center;color:#b91c1c;">โหลดรายการคิวไม่สำเร็จ</td></tr>';
+    }
 }
 
 async function updateStatus(id, status) {
@@ -62,7 +71,8 @@ async function updateStatus(id, status) {
             body: JSON.stringify({ status })
         });
         const result = await res.json();
+        if (!res.ok || !result.success) throw new Error(result.message || 'อัปเดตสถานะไม่สำเร็จ');
         alert(result.message);
         loadQueues();
-    } catch (err) { alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ'); }
+    } catch (err) { alert(err.message || 'เกิดข้อผิดพลาดในการอัปเดตสถานะ'); }
 }
