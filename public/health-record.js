@@ -71,7 +71,7 @@ async function loadHealthRecords() {
 }
 
 function isVaccination(record) {
-  return /วัคซีน|vaccine/i.test(record.service_details || '');
+  return record.record_type === 'vaccination' || /วัคซีน|vaccine/i.test(record.service_details || '');
 }
 
 function setRecordFilter(filter) {
@@ -112,6 +112,7 @@ function renderRecords() {
           <p class="text-xs text-slate-500">สัตวแพทย์: ${escapeHtml(record.vet_name || 'ไม่ระบุ')}</p>
         </div>
         ${record.service_details ? `<div class="mt-4"><p class="text-xs font-semibold text-slate-500">บริการ / วัคซีน</p><p class="mt-1 whitespace-pre-line text-sm text-slate-700">${escapeHtml(record.service_details)}</p></div>` : ''}
+        ${record.vaccine_name ? `<div class="mt-3 text-sm text-slate-700"><p>เลข Lot: ${escapeHtml(record.lot_number || 'ไม่ระบุ')}</p><p>วันที่ฉีด: ${formatDate(record.administered_at)}</p>${record.next_due_date ? `<p>กำหนดฉีดครั้งถัดไป: ${formatDate(record.next_due_date)}</p>` : ''}${record.vaccine_notes ? `<p class="mt-1 whitespace-pre-line">หมายเหตุ: ${escapeHtml(record.vaccine_notes)}</p>` : ''}</div>` : ''}
         ${record.medication_details ? `<div class="mt-3"><p class="text-xs font-semibold text-slate-500">ยาและคำแนะนำ</p><p class="mt-1 whitespace-pre-line text-sm text-slate-700">${escapeHtml(record.medication_details)}</p></div>` : ''}
         ${record.reason ? `<p class="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500">อาการก่อนเข้ารับบริการ: ${escapeHtml(record.reason)}</p>` : ''}
       </article>

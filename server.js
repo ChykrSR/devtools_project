@@ -243,7 +243,30 @@ app.get('/api/pets/:id/health-records', requireClinicalSchema, async (req, res) 
       [id, userId]
     );
 
-    res.json({ success: true, pet: pets[0], records });
+    const [vaccinations] = await db.execute(
+      `SELECT vr.id, vr.vaccine_name, vr.lot_number, vr.administered_at,
+              vr.next_due_date, vr.notes AS vaccine_notes, vr.created_at,
+              a.appointment_date, a.appointment_time, a.reason,
+              v.full_name AS vet_name
+       FROM vaccination_records vr
+       JOIN appointments a ON a.id = vr.appointment_id
+       LEFT JOIN users v ON v.id = vr.recorded_by
+       WHERE vr.pet_id = ? AND a.user_id = ?
+       ORDER BY vr.administered_at DESC, vr.id DESC`,
+      [id, userId]
+    );
+
+    const combinedRecords = [
+      ...records.map(record => ({ ...record, record_type: 'treatment' })),
+      ...vaccinations.map(record => ({
+        ...record,
+        record_type: 'vaccination',
+        diagnosis: `ฉีดวัคซีน: ${record.vaccine_name}`,
+        service_details: `วัคซีน: ${record.vaccine_name}`
+      }))
+    ].sort((first, second) => new Date(second.created_at) - new Date(first.created_at));
+
+    res.json({ success: true, pet: pets[0], records: combinedRecords });
   } catch (error) {
     console.error('Fetch Health Records Error:', error);
     res.status(500).json({ success: false, message: 'ไม่สามารถดึงประวัติสุขภาพได้' });
@@ -503,22 +526,62 @@ app.use('/api/prescriptions', requireClinicalSchema);
 
 // บันทึกการรักษา / สั่งยา
 app.post('/api/prescriptions', async (req, res) => {
-    const { appointment_id, vet_id, diagnosis, medication_details, service_details } = req.body;
-  const connection = await db.getConnection();
+  const { appointment_id, vet_id, diagnosis, medication_details, service_details, vaccination } = req.body;
+  if (!appointment_id || !vet_id || !diagnosis) {
+    return res.status(400).json({ success: false, message: 'กรุณาระบุคิวนัด ผู้บันทึก และผลวินิจฉัย' });
+  }
+  if (vaccination && (!vaccination.vaccine_name || !vaccination.administered_at)) {
+    return res.status(400).json({ success: false, message: 'กรุณาระบุชื่อวัคซีนและวันที่ฉีด' });
+  }
+
+  let connection;
+  let transactionStarted = false;
   try {
+    connection = await db.getConnection();
     await connection.beginTransaction();
+    transactionStarted = true;
+    const [appointments] = await connection.execute(
+      'SELECT pet_id, status FROM appointments WHERE id = ? FOR UPDATE',
+      [appointment_id]
+    );
+    if (!appointments.length || ['completed', 'cancelled'].includes(appointments[0].status)) {
+      await connection.rollback();
+      transactionStarted = false;
+      return res.status(400).json({ success: false, message: 'คิวนี้ไม่สามารถบันทึกการรักษาได้' });
+    }
+
     await connection.execute(
       'INSERT INTO prescriptions (appointment_id, vet_id, diagnosis, medication_details, service_details) VALUES (?, ?, ?, ?, ?)',
       [appointment_id, vet_id, diagnosis, medication_details || '', service_details || '']
     );
+
+    if (vaccination) {
+      await connection.execute(
+        `INSERT INTO vaccination_records
+          (appointment_id, pet_id, recorded_by, vaccine_name, lot_number, administered_at, next_due_date, notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          appointment_id,
+          appointments[0].pet_id,
+          vet_id,
+          vaccination.vaccine_name.trim(),
+          vaccination.lot_number || '',
+          vaccination.administered_at,
+          vaccination.next_due_date || null,
+          vaccination.notes || ''
+        ]
+      );
+    }
+
     await connection.execute("UPDATE appointments SET status = 'completed' WHERE id = ?", [appointment_id]);
     await connection.commit();
+    transactionStarted = false;
     res.json({ success: true, message: 'บันทึกการรักษาและปิดคิวเรียบร้อยแล้ว!' });
   } catch (error) {
-    await connection.rollback();
+    if (connection && transactionStarted) await connection.rollback();
     console.error('Save Prescription Error:', error);
     res.status(500).json({ success: false, message: 'บันทึกการรักษาไม่สำเร็จ' });
   } finally {
-    connection.release();
+    if (connection) connection.release();
   }
 });
