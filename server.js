@@ -22,6 +22,14 @@ const db = mysql.createPool({
 
 // Prepare only missing billing tables; legacy routes remain independent.
 const billingReady = require('./lib/billing-schema')(db);
+const clinicalReady = require('./lib/clinical-schema')(db);
+
+function requireClinicalSchema(req, res, next) {
+  clinicalReady.then(ready => ready ? next() : res.status(503).json({
+    success: false, message: 'ส่วนประวัติการรักษายังไม่พร้อม กรุณาตรวจฐานข้อมูลและเริ่มเซิร์ฟเวอร์ใหม่'
+  }));
+}
+
 app.use('/api/billing', (req, res, next) => {
   billingReady.then(ready => ready ? next() : res.status(503).json({
     success: false, message: 'ส่วนบิลยังไม่พร้อม กรุณาตรวจฐานข้อมูลและเริ่มเซิร์ฟเวอร์ใหม่'
@@ -206,7 +214,7 @@ app.delete('/api/pets/:id', async (req, res) => {
 // ==========================================
 // UC-03: ประวัติสุขภาพและวัคซีนสำหรับเจ้าของสัตว์เลี้ยง
 // ==========================================
-app.get('/api/pets/:id/health-records', async (req, res) => {
+app.get('/api/pets/:id/health-records', requireClinicalSchema, async (req, res) => {
   try {
     const { id } = req.params;
     const { user_id: userId } = req.query;
@@ -353,6 +361,7 @@ app.listen(PORT, () => {
 // ==========================================
 // UC-04: API สำหรับการจองคิวนัดหมาย (Booking)
 // ==========================================
+app.use('/api/appointments', requireClinicalSchema);
 
 // ดึงรายการสัตว์เลี้ยงของ User
 app.get('/api/pets/user/:userId', (req, res) => {
@@ -453,6 +462,7 @@ app.put('/api/appointments/:id/status', (req, res) => {
 // ==========================================
 // UC-09: API สำหรับการวินิจฉัยและสั่งยา (Vet)
 // ==========================================
+app.use('/api/prescriptions', requireClinicalSchema);
 
 // บันทึกการรักษา / สั่งยา
 app.post('/api/prescriptions', (req, res) => {
