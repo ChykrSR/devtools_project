@@ -203,6 +203,45 @@ app.delete('/api/pets/:id', async (req, res) => {
   }
 });
 
+// ==========================================
+// UC-03: ประวัติสุขภาพและวัคซีนสำหรับเจ้าของสัตว์เลี้ยง
+// ==========================================
+app.get('/api/pets/:id/health-records', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { user_id: userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'ไม่พบรหัสผู้ใช้งาน' });
+    }
+
+    const [pets] = await db.execute(
+      'SELECT id, name, type, breed FROM pets WHERE id = ? AND user_id = ?',
+      [id, userId]
+    );
+    if (pets.length === 0) {
+      return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลสัตว์เลี้ยง' });
+    }
+
+    const [records] = await db.execute(
+      `SELECT pr.id, pr.diagnosis, pr.medication_details, pr.service_details,
+              pr.created_at, a.appointment_date, a.appointment_time,
+              a.reason, v.full_name AS vet_name
+       FROM prescriptions pr
+       JOIN appointments a ON a.id = pr.appointment_id
+       LEFT JOIN users v ON v.id = pr.vet_id
+       WHERE a.pet_id = ? AND a.user_id = ?
+       ORDER BY pr.created_at DESC, pr.id DESC`,
+      [id, userId]
+    );
+
+    res.json({ success: true, pet: pets[0], records });
+  } catch (error) {
+    console.error('Fetch Health Records Error:', error);
+    res.status(500).json({ success: false, message: 'ไม่สามารถดึงประวัติสุขภาพได้' });
+  }
+});
+
 //health check endpoint ให้ jenkins
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', message: 'Server is healthy' });

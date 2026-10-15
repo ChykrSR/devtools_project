@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ประวัติสุขภาพและวัคซีน - Pet Care Clinic</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Prompt', sans-serif; }</style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800">
+  <nav class="bg-teal-800 text-white shadow-md">
+    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center gap-4">
+        <a href="dashboard.html" class="text-sm text-teal-200 transition hover:text-white">← กลับหน้าหลัก</a>
+        <span class="hidden h-5 w-px bg-teal-600 sm:block"></span>
+        <span class="font-semibold">ประวัติสุขภาพและวัคซีน (UC-03)</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span id="nav-user-name" class="hidden text-sm text-teal-100 sm:inline">กำลังโหลด...</span>
+        <button onclick="handleLogout()" class="rounded-lg bg-teal-900/60 px-3 py-1.5 text-xs transition hover:bg-red-600">ออกจากระบบ</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="mx-auto max-w-5xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="text-xs font-semibold uppercase text-teal-700">Pet Care Clinic / UC-03</p>
+        <h1 class="mt-1 text-2xl font-bold">ประวัติสุขภาพและวัคซีน</h1>
+        <p class="mt-1 text-sm text-slate-500">ตรวจดูผลการรักษา ยาที่ได้รับ และบริการวัคซีนย้อนหลัง</p>
+      </div>
+      <label class="w-full text-sm font-medium text-slate-700 sm:w-72">
+        เลือกสัตว์เลี้ยง
+        <select id="pet-select" class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-100">
+          <option value="">กำลังโหลดรายการ...</option>
+        </select>
+      </label>
+    </header>
+
+    <div id="record-alert" role="status" class="hidden rounded-lg border px-4 py-3 text-sm"></div>
+
+    <section id="pet-summary" class="hidden border-y border-slate-200 bg-white px-5 py-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 id="pet-name" class="text-lg font-bold"></h2>
+          <p id="pet-details" class="text-sm text-slate-500"></p>
+        </div>
+        <div class="flex gap-6 text-sm">
+          <p><span id="health-count" class="font-bold text-slate-800">0</span><span class="ml-1 text-slate-500">ประวัติการรักษา</span></p>
+          <p><span id="vaccine-count" class="font-bold text-teal-700">0</span><span class="ml-1 text-slate-500">รายการวัคซีน</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="space-y-4">
+      <div class="flex items-center justify-between gap-3">
+        <h2 class="text-lg font-bold">รายการบันทึก</h2>
+        <div class="inline-flex rounded-lg border border-slate-200 bg-white p-1" role="group" aria-label="ตัวกรองประวัติ">
+          <button id="filter-all" type="button" onclick="setRecordFilter('all')" aria-pressed="true" class="rounded-md bg-teal-700 px-3 py-1.5 text-xs font-medium text-white">ทั้งหมด</button>
+          <button id="filter-vaccines" type="button" onclick="setRecordFilter('vaccines')" aria-pressed="false" class="rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100">วัคซีน</button>
+        </div>
+      </div>
+      <div id="records-container" class="space-y-3">
+        <div class="border-y border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-400">กำลังโหลดประวัติ...</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="health-record.js"></script>
+</body>
+</html>
