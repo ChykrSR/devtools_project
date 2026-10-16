@@ -3,6 +3,7 @@ CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
 USE mydb;
+SET NAMES utf8mb4;
 
 -- 1. สร้างตาราง users
 CREATE TABLE IF NOT EXISTS users (
