@@ -3,28 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>แดชบอร์ด - Pet Care Clinic</title>
+  <title>แดชบอร์ด - Pet Care Clinic v1.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style> body { font-family: 'Prompt', sans-serif; } </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
+  <!-- Navigation Bar -->
+  <nav class="bg-teal-700 text-white shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         
-        <!-- Logo -->
-        <div class="flex items-center space-x-3">
-          <span class="text-2xl">🐾</span>
-          <span class="font-bold text-xl tracking-wide">Pet Care Clinic</span>
-        </div>
+        <!-- Logo & Navigation Links -->
+        <div class="flex items-center space-x-6">
+          <div class="flex items-center space-x-3">
+            <span class="text-2xl">🐾</span>
+            <span class="font-bold text-xl tracking-wide">Pet Care Clinic</span>
+          </div>
 
-        <!-- Menu Links -->
+          <!-- Menu Links -->
           <div class="hidden md:flex items-center space-x-2">
             <a href="dashboard.html" class="px-3 py-2 bg-teal-800 text-white text-sm font-medium rounded-lg">หน้าแรก</a>
             <a href="pets.html" class="px-3 py-2 text-teal-100 hover:bg-teal-600 text-sm font-medium rounded-lg transition">จัดการสัตว์เลี้ยง</a>
 
-            <!-- 🟢 ปุ่มเฉพาะ Admin (ซ่อนไว้ด้วย class "hidden") -->
+            <!-- 🟢 ปุ่มจัดการคิว บน Navbar (ซ่อนไว้ด้วย class "hidden" โชว์เฉพาะ Admin) -->
+            <a id="adminQueueMenu" 
+               href="queue-manage.html" 
+               class="hidden items-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow transition">
+              <i class="fa-solid fa-list-check"></i>
+              <span>จัดการคิว & นัดหมาย</span>
+            </a>
+
+            <!-- 🟢 ปุ่มจัดการคลินิก บน Navbar (ซ่อนไว้ด้วย class "hidden" โชว์เฉพาะ Admin) -->
             <a id="adminClinicMenu" 
                href="manage-clinic.html" 
                class="hidden items-center gap-2 px-3 py-2 bg-amber-400 hover:bg-amber-500 text-slate-900 text-sm font-bold rounded-lg shadow transition">
@@ -71,7 +83,8 @@
       </div>
       <div class="absolute -right-6 -bottom-8 opacity-10 text-9xl select-none pointer-events-none">🐾</div>
     </div>
-    <!-- 🏥 กล่องแสดงข้อมูลคลินิก (แสดงผลบน Dashboard) -->
+
+    <!-- 🏥 กล่องแสดงข้อมูลคลินิก -->
     <section class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -108,7 +121,7 @@
       </div>
     </section>
 
-    <!-- Status Overview Cards (ดึงข้อมูลจริงจาก DB) -->
+    <!-- Status Overview Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       
       <!-- Card 1: สัตว์เลี้ยงของฉัน -->
@@ -143,49 +156,60 @@
           <p id="today-queue-detail" class="text-xs text-slate-400 mt-1">สถานะนัดหมายของวันนี้</p>
         </div>
         <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-2xl">
-          ⏱️️
+          ⏱
         </div>
       </a>
 
     </div>
 
-    <!-- Quick Actions Menu (เชื่อม Link ไปหน้า pets.html เรียบร้อย) -->
+    <!-- Quick Actions Menu -->
     <section>
       <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center">
         <span>⚡ เมนูลัดและบริการ</span>
       </h2>
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         
-        <!-- เมนูที่ 1: ลิ้งก์ไปหน้า pets.html (UC-02) -->
+        <!-- เมนูที่ 1: จัดการประวัติสัตว์เลี้ยง -->
         <a href="pets.html" class="p-5 bg-white rounded-2xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition text-center group block">
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">🐕</div>
           <span class="block font-medium text-sm text-slate-700 group-hover:text-teal-600">จัดการประวัติสัตว์เลี้ยง</span>
-
         </a>
 
-        <!-- เมนูที่ 2: รอเชื่อม UC-04 -->
+        <!-- เมนูที่ 2: จองคิวนัดหมาย -->
         <a href="booking.html" class="p-5 bg-white rounded-2xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition text-center group block">
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">🗓️</div>
           <span class="block font-medium text-sm text-slate-700 group-hover:text-teal-600">จองคิวนัดหมาย</span>
-
         </a>
 
-        <!-- เมนูที่ 3: UC-03 -->
+        <!-- เมนูที่ 3: ประวัติการฉีดวัคซีน -->
         <a href="health-record.html" class="p-5 bg-white rounded-2xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition text-center group block">
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">💉</div>
           <span class="block font-medium text-sm text-slate-700 group-hover:text-teal-600">ประวัติการฉีดวัคซีน</span>
         </a>
 
-        <!-- เมนูที่ 4: รอเชื่อม UC-06 -->
+        <!-- เมนูที่ 4: บิลค่ารักษา / ใบเสร็จ -->
         <button onclick="window.location.href='billing.html'" class="p-5 bg-white rounded-2xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition text-center group">
           <div class="text-3xl mb-2 group-hover:scale-110 transition-transform">🧾</div>
           <span class="block font-medium text-sm text-slate-700 group-hover:text-teal-600">บิลค่ารักษา / ใบเสร็จ</span>
         </button>
 
+        <!-- 🟢 เมนูที่ 5 (Admin Only Card): Manage Queues & Appointments -->
+        <a id="adminQueueCard" 
+           href="queue-manage.html" 
+           class="hidden col-span-2 sm:col-span-4 p-5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl shadow-md hover:shadow-lg transition text-center group">
+          <div class="flex items-center justify-center gap-3">
+            <div class="text-3xl group-hover:scale-110 transition-transform">⏱️</div>
+            <div class="text-left">
+              <h3 class="font-bold text-base sm:text-lg">Manage Queues & Appointments</h3>
+              <p class="text-xs text-indigo-100">จัดลำดับคิว / เรียกคิว / อัปเดตสถานะ (เฉพาะ Admin / เจ้าหน้าที่)</p>
+            </div>
+          </div>
+        </a>
+
       </div>
     </section>
 
-    <!-- Registered Pets List (Render Dynamic จาก MySQL) -->
+    <!-- Registered Pets List -->
     <section class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-bold text-slate-800">🐾 รายการสัตว์เลี้ยงของคุณ</h2>
@@ -194,7 +218,6 @@
         </a>
       </div>
 
-      <!-- Container สำหรับแสดงรายการสัตว์เลี้ยงจริง -->
       <div id="pets-list-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="col-span-full py-8 text-center text-slate-400">กำลังดึงข้อมูลสัตว์เลี้ยง...</div>
       </div>

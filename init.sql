@@ -1,4 +1,7 @@
-CREATE DATABASE IF NOT EXISTS mydb;
+CREATE DATABASE IF NOT EXISTS mydb
+CHARACTER SET utf8mb4 
+COLLATE utf8mb4_unicode_ci;
+
 USE mydb;
 
 -- 1. สร้างตาราง users
@@ -10,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     phone VARCHAR(20),
     role ENUM('pet_owner', 'vet', 'staff', 'admin') DEFAULT 'pet_owner',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 2. สร้างตาราง pets (UC-02)
 CREATE TABLE IF NOT EXISTS pets (
@@ -25,7 +28,7 @@ CREATE TABLE IF NOT EXISTS pets (
     notes TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Mock Data: Users (id=1 Admin, id=2 Pet Owner)
 INSERT IGNORE INTO users (id, full_name, email, password, phone, role) VALUES 
@@ -49,7 +52,7 @@ CREATE TABLE IF NOT EXISTS clinic_info (
     tax_id VARCHAR(50),
     opening_hours VARCHAR(255),
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Seed ข้อมูลเริ่มต้นของคลินิก
 INSERT INTO clinic_info (id, name, address, phone, email, tax_id, opening_hours)
@@ -79,7 +82,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 -- ตารางสำหรับ UC-09: ประวัติการตรวจ วินิจฉัย และสั่งยา (Prescriptions)
@@ -94,7 +97,7 @@ CREATE TABLE IF NOT EXISTS prescriptions (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
     FOREIGN KEY (vet_id) REFERENCES users(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS vaccination_records (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -111,7 +114,7 @@ CREATE TABLE IF NOT EXISTS vaccination_records (
     FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
     FOREIGN KEY (pet_id) REFERENCES pets(id) ON DELETE CASCADE,
     FOREIGN KEY (recorded_by) REFERENCES users(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 -- END CLINICAL SCHEMA
 
 -- BEGIN BILLING SCHEMA
