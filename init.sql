@@ -1,5 +1,6 @@
 CREATE DATABASE IF NOT EXISTS mydb;
 USE mydb;
+SET NAMES utf8mb4;
 
 -- 1. สร้างตาราง users
 CREATE TABLE IF NOT EXISTS users (
