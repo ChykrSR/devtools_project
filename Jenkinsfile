@@ -11,7 +11,8 @@ pipeline {
         stage('2. สตาร์ต Web และ MySQL') {
             steps {
                 // รัน Docker Compose เพื่อ Build Node.js และเปิด MySQL
-                sh 'docker compose up -d --build'
+                docker compose down --remove-orphans || true
+                docker compose up -d --build
             }
         }
 

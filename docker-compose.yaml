@@ -1,10 +1,7 @@
-version: '3.8'
-
 services:
   # บริการ Backend (Node.js + Express)
   web:
     build: .
-    container_name: pet_clinic_web
     ports:
       - "3000:3000"
     environment:
@@ -15,13 +12,12 @@ services:
       - DB_NAME=mydb
     depends_on:
       db:
-        condition: service_healthy # รอให้ DB รัน init.sql เสร็จก่อนค่อยรัน Web
+        condition: service_healthy
     restart: always
 
   # บริการ Database (MySQL 8.0)
   db:
     image: mysql:8.0
-    container_name: pet_clinic_db
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
@@ -30,7 +26,6 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
-      # 🟢 เพิ่มบรรทัดนี้เพื่อส่งไฟล์ init.sql เข้าไปรันตอนสร้าง Database ครั้งแรก
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
@@ -38,6 +33,5 @@ services:
       timeout: 5s
       retries: 10
 
-# เก็บข้อมูล MySQL ไว้ใน Volume เพื่อไม่ให้ข้อมูลหายเมื่อ Restart Container
 volumes:
   db_data:
