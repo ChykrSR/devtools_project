@@ -15,7 +15,6 @@ const db = mysql.createPool({
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || 'rootpassword',
   database: process.env.DB_NAME || 'mydb',
-  charset: 'utf8mb4', // 🟢 เพิ่มบรรทัดนี้ เพื่อบังคับให้ดึงข้อมูลเป็น UTF-8
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0

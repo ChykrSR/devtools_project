@@ -29,29 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 🟢 3. เปิดแสดงผลปุ่ม Admin ต่างๆ เมื่อ user.role === 'admin'
-    if (user.role === 'admin') {
-        const adminClinicMenu = document.getElementById('adminClinicMenu');
-        const adminQueueMenu = document.getElementById('adminQueueMenu');
-        const adminQueueCard = document.getElementById('adminQueueCard');
-        const editClinicBtn = document.getElementById('editClinicBtn');
-
-        if (adminClinicMenu) {
-            adminClinicMenu.classList.remove('hidden');
-            adminClinicMenu.classList.add('flex');
-        }
-        if (adminQueueMenu) {
-            adminQueueMenu.classList.remove('hidden');
-            adminQueueMenu.classList.add('flex');
-        }
-        if (adminQueueCard) {
-            adminQueueCard.classList.remove('hidden');
-            adminQueueCard.classList.add('block');
-        }
-        if (editClinicBtn) {
-            editClinicBtn.classList.remove('hidden');
-            editClinicBtn.classList.add('flex');
-        }
+    // 3. เปิดแสดงผลปุ่ม Admin เมื่อ user.role === 'admin'
+    const adminClinicMenu = document.getElementById('adminClinicMenu');
+    if (adminClinicMenu && user.role === 'admin') {
+        adminClinicMenu.classList.remove('hidden');
+        adminClinicMenu.classList.add('flex');
     }
 
     // 4. ดึง ID ของ User (รองรับทั้ง user.id และ user.user_id)
@@ -63,15 +45,32 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // 5. โหลดรายการสัตว์เลี้ยง และสถานะคิว
+    // 5. โหลดรายการสัตว์เลี้ยง
     loadUserPets(userId);
     loadTodayQueue(userId);
     setInterval(() => {
         if (!document.hidden) loadTodayQueue(userId);
     }, 5000);
 
-    // โหลดข้อมูลคลินิกมาแสดงบน Dashboard
+    // 🟢 1. เช็คสิทธิ์ Admin เพื่อเปิดปุ่ม "แก้ไขข้อมูลคลินิก" และปุ่มบน Navbar
+    if (user.role === 'admin') {
+        const adminClinicMenu = document.getElementById('adminClinicMenu');
+        const editClinicBtn = document.getElementById('editClinicBtn');
+
+        if (adminClinicMenu) {
+            adminClinicMenu.classList.remove('hidden');
+            adminClinicMenu.classList.add('flex');
+        }
+        if (editClinicBtn) {
+            editClinicBtn.classList.remove('hidden');
+            editClinicBtn.classList.add('flex');
+        }
+    }
+
+    // 🟢 2. โหลดข้อมูลคลินิกมาแสดงบน Dashboard
     loadClinicInfo();
+
+
 });
 
 async function loadTodayQueue(userId) {
@@ -143,9 +142,12 @@ async function loadUserPets(userId) {
         const result = await response.json();
         console.log('✅ Pets API Response:', result);
 
+        // 🟢 ดึงข้อมูลจาก result.pets หรือ result.data ให้รองรับทั้ง 2 แบบ
         const pets = result.pets || result.data || [];
 
         if (result.success && Array.isArray(pets) && pets.length > 0) {
+            
+            // นับจำนวนแยกประเภท
             const dogs = pets.filter(p => p.type === 'dog').length;
             const cats = pets.filter(p => p.type === 'cat').length;
             const others = pets.length - (dogs + cats);
@@ -153,6 +155,7 @@ async function loadUserPets(userId) {
             if (totalCountEl) totalCountEl.textContent = pets.length;
             if (detailCountEl) detailCountEl.textContent = `สุนัข ${dogs} | แมว ${cats}${others > 0 ? ` | อื่นๆ ${others}` : ''}`;
 
+            // Render การ์ดสัตว์เลี้ยง
             container.innerHTML = pets.map(pet => `
                 <div class="p-4 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
                     <div class="flex items-center space-x-3">
@@ -181,6 +184,7 @@ async function loadUserPets(userId) {
     }
 }
 
+// ฟังก์ชันแสดงข้อความเมื่อเกิด Error
 function showPetError(message) {
     const container = document.getElementById('pets-list-container');
     const totalCountEl = document.getElementById('pet-count-total');
@@ -193,6 +197,7 @@ function showPetError(message) {
     }
 }
 
+// Utility Helpers
 function getPetEmoji(type) {
     switch (type) {
         case 'cat': return '🐱';
@@ -228,7 +233,7 @@ async function loadClinicInfo() {
             if (hoursEl) hoursEl.textContent = clinic.opening_hours || '-';
             if (addressEl) addressEl.textContent = clinic.address || '-';
         }
-    } catch (error) {
+      } catch (error) {
         console.error('❌ Error loading clinic info:', error);
     }
 }
