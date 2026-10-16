@@ -11,7 +11,7 @@ pipeline {
         stage('2. สตาร์ต Web และ MySQL') {
             steps {
                 // เก็บข้อมูลใน MySQL volume ไว้ระหว่าง deploy ปกติ
-                sh 'docker compose down --remove-orphans || true'
+                sh 'docker compose down -v --remove-orphans || true'
                 sh 'docker compose up -d --build'
             }
         }
