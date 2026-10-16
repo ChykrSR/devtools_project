@@ -233,7 +233,8 @@ async function loadClinicInfo() {
     }
 }
 
-function handleLogout() {
+async function handleLogout() {
+    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (error) {}
     localStorage.removeItem('user');
     window.location.href = 'index.html';
 }

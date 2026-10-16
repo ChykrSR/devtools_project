@@ -204,8 +204,9 @@ async function deletePet(id, name) {
   }
 }
 
-function handleLogout() {
+async function handleLogout() {
   if (confirm('ต้องการออกจากระบบหรือไม่?')) {
+    try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (error) {}
     localStorage.removeItem('user');
     window.location.href = 'index.html';
   }

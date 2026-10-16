@@ -69,8 +69,9 @@ function getCurrentUser() {
 // ==========================================
 // 3. ปุ่มออกจากระบบ (Logout)
 // ==========================================
-function handleLogout() {
+async function handleLogout() {
     if (confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) {
+        try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (error) {}
         localStorage.removeItem('currentUser');
         localStorage.removeItem('user');
         localStorage.removeItem('loggedInUser');

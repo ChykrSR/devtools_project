@@ -1,9 +1,56 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const path = require('path');
+const crypto = require('node:crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const sessionSecret = process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex');
+const sessionMaxAge = 8 * 60 * 60;
+
+function createSessionToken(userId) {
+  const expiresAt = Math.floor(Date.now() / 1000) + sessionMaxAge;
+  const payload = `${userId}.${expiresAt}`;
+  const signature = crypto.createHmac('sha256', sessionSecret).update(payload).digest('hex');
+  return `${payload}.${signature}`;
+}
+
+function getSessionUserId(req) {
+  const cookie = (req.headers.cookie || '').split(';').map(value => value.trim())
+    .find(value => value.startsWith('petclinic_session='));
+  if (!cookie) return null;
+
+  const token = cookie.slice('petclinic_session='.length);
+  const [userId, expiresAt, signature] = token.split('.');
+  if (!/^\d+$/.test(userId || '') || !/^\d+$/.test(expiresAt || '') || !signature) return null;
+  if (Number(expiresAt) <= Math.floor(Date.now() / 1000)) return null;
+
+  const payload = `${userId}.${expiresAt}`;
+  const expected = Buffer.from(crypto.createHmac('sha256', sessionSecret).update(payload).digest('hex'), 'hex');
+  const received = Buffer.from(signature, 'hex');
+  if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) return null;
+  return Number(userId);
+}
+
+async function requireAdminSession(req, res, next) {
+  const userId = getSessionUserId(req);
+  if (!userId) return res.status(401).json({ success: false, message: 'กรุณาเข้าสู่ระบบใหม่' });
+
+  try {
+    const [admins] = await db.execute("SELECT id FROM users WHERE id = ? AND role = 'admin'", [userId]);
+    if (!admins.length) return res.status(403).json({ success: false, message: 'ต้องใช้บัญชีผู้ดูแลระบบ' });
+    req.authenticatedUserId = userId;
+    next();
+  } catch (error) {
+    console.error('Admin Session Check Error:', error);
+    res.status(500).json({ success: false, message: 'ตรวจสอบสิทธิ์ไม่สำเร็จ' });
+  }
+}
+
+function setSessionCookie(req, res, userId) {
+  const secure = req.secure ? '; Secure' : '';
+  res.setHeader('Set-Cookie', `petclinic_session=${createSessionToken(userId)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${sessionMaxAge}${secure}`);
+}
 
 app.use('/api/billing', express.json({ limit: '1mb' }));
 app.use(express.json());
@@ -39,7 +86,7 @@ app.use('/api/billing', (req, res, next) => {
 // 1. API สมัครสมาชิก (Register)
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { full_name, email, password, phone, role } = req.body;
+    const { full_name, email, password, phone } = req.body;
 
     if (!full_name || !email || !password) {
       return res.status(400).json({ success: false, message: 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน' });
@@ -52,10 +99,9 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     // บันทึกลง MySQL ตรงๆ
-    const userRole = role || 'pet_owner';
     const [result] = await db.execute(
       'INSERT INTO users (full_name, email, password, phone, role) VALUES (?, ?, ?, ?, ?)',
-      [full_name, email, password, phone || '', userRole]
+      [full_name, email, password, phone || '', 'pet_owner']
     );
 
     res.status(201).json({
@@ -89,6 +135,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const user = users[0];
+    setSessionCookie(req, res, user.id);
 
     res.json({
       success: true,
@@ -99,6 +146,12 @@ app.post('/api/auth/login', async (req, res) => {
     console.error('Login Error:', error);
     res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์' });
   }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  const secure = req.secure ? '; Secure' : '';
+  res.setHeader('Set-Cookie', `petclinic_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${secure}`);
+  res.json({ success: true });
 });
 
 // ==========================================
@@ -214,59 +267,103 @@ app.delete('/api/pets/:id', async (req, res) => {
 // ==========================================
 // UC-03: ประวัติสุขภาพและวัคซีนสำหรับเจ้าของสัตว์เลี้ยง
 // ==========================================
+async function getPetHealthHistory(petId, ownerUserId = null) {
+  const [pets] = ownerUserId
+    ? await db.execute(
+        `SELECT p.id, p.name, p.type, p.breed, u.full_name AS owner_name
+         FROM pets p JOIN users u ON u.id = p.user_id
+         WHERE p.id = ? AND p.user_id = ?`,
+        [petId, ownerUserId]
+      )
+    : await db.execute(
+        `SELECT p.id, p.name, p.type, p.breed, u.full_name AS owner_name
+         FROM pets p JOIN users u ON u.id = p.user_id WHERE p.id = ?`,
+        [petId]
+      );
+  if (pets.length === 0) return null;
+
+  const ownerFilter = ownerUserId ? ' AND a.user_id = ?' : '';
+  const ownerParams = ownerUserId ? [petId, ownerUserId] : [petId];
+  const [records] = await db.execute(
+    `SELECT pr.id, pr.diagnosis, pr.medication_details, pr.service_details,
+            pr.created_at, a.appointment_date, a.appointment_time,
+            a.reason, v.full_name AS vet_name
+     FROM prescriptions pr
+     JOIN appointments a ON a.id = pr.appointment_id
+     LEFT JOIN users v ON v.id = pr.vet_id
+     WHERE a.pet_id = ?${ownerFilter}
+     ORDER BY pr.created_at DESC, pr.id DESC`,
+    ownerParams
+  );
+  const [vaccinations] = await db.execute(
+    `SELECT vr.id, vr.vaccine_name, vr.lot_number, vr.administered_at,
+            vr.next_due_date, vr.notes AS vaccine_notes, vr.created_at,
+            a.appointment_date, a.appointment_time, a.reason,
+            v.full_name AS vet_name
+     FROM vaccination_records vr
+     JOIN appointments a ON a.id = vr.appointment_id
+     LEFT JOIN users v ON v.id = vr.recorded_by
+     WHERE vr.pet_id = ?${ownerFilter}
+     ORDER BY vr.administered_at DESC, vr.id DESC`,
+    ownerParams
+  );
+
+  const combinedRecords = [
+    ...records.map(record => ({ ...record, record_type: 'treatment' })),
+    ...vaccinations.map(record => ({
+      ...record,
+      record_type: 'vaccination',
+      diagnosis: `ฉีดวัคซีน: ${record.vaccine_name}`,
+      service_details: `วัคซีน: ${record.vaccine_name}`
+    }))
+  ].sort((first, second) => new Date(second.created_at) - new Date(first.created_at));
+
+  return { pet: pets[0], records: combinedRecords };
+}
+
+app.get('/api/admin/pets', requireClinicalSchema, requireAdminSession, async (req, res) => {
+  try {
+    const [pets] = await db.execute(
+      `SELECT p.id, p.name, p.type, p.breed, p.user_id, u.full_name AS owner_name
+       FROM pets p
+       JOIN users u ON u.id = p.user_id
+       ORDER BY u.full_name, p.name`,
+      []
+    );
+    res.json({ success: true, pets });
+  } catch (error) {
+    console.error('Fetch All Pets For Admin Error:', error);
+    res.status(500).json({ success: false, message: 'ไม่สามารถดึงรายการสัตว์เลี้ยงได้' });
+  }
+});
+
+app.get('/api/admin/pets/:id/health-records', requireClinicalSchema, requireAdminSession, async (req, res) => {
+  try {
+    const history = await getPetHealthHistory(req.params.id);
+    if (!history) return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลสัตว์เลี้ยง' });
+    res.json({ success: true, ...history });
+  } catch (error) {
+    console.error('Fetch Admin Health Records Error:', error);
+    res.status(500).json({ success: false, message: 'ไม่สามารถดึงประวัติสุขภาพได้' });
+  }
+});
+
 app.get('/api/pets/:id/health-records', requireClinicalSchema, async (req, res) => {
   try {
     const { id } = req.params;
     const { user_id: userId } = req.query;
+    const sessionUserId = getSessionUserId(req);
 
-    if (!userId) {
-      return res.status(400).json({ success: false, message: 'ไม่พบรหัสผู้ใช้งาน' });
+    if (!sessionUserId) {
+      return res.status(401).json({ success: false, message: 'กรุณาเข้าสู่ระบบใหม่' });
+    }
+    if (Number(userId) !== sessionUserId) {
+      return res.status(403).json({ success: false, message: 'ไม่มีสิทธิ์ดูประวัติสัตว์เลี้ยงนี้' });
     }
 
-    const [pets] = await db.execute(
-      'SELECT id, name, type, breed FROM pets WHERE id = ? AND user_id = ?',
-      [id, userId]
-    );
-    if (pets.length === 0) {
-      return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลสัตว์เลี้ยง' });
-    }
-
-    const [records] = await db.execute(
-      `SELECT pr.id, pr.diagnosis, pr.medication_details, pr.service_details,
-              pr.created_at, a.appointment_date, a.appointment_time,
-              a.reason, v.full_name AS vet_name
-       FROM prescriptions pr
-       JOIN appointments a ON a.id = pr.appointment_id
-       LEFT JOIN users v ON v.id = pr.vet_id
-       WHERE a.pet_id = ? AND a.user_id = ?
-       ORDER BY pr.created_at DESC, pr.id DESC`,
-      [id, userId]
-    );
-
-    const [vaccinations] = await db.execute(
-      `SELECT vr.id, vr.vaccine_name, vr.lot_number, vr.administered_at,
-              vr.next_due_date, vr.notes AS vaccine_notes, vr.created_at,
-              a.appointment_date, a.appointment_time, a.reason,
-              v.full_name AS vet_name
-       FROM vaccination_records vr
-       JOIN appointments a ON a.id = vr.appointment_id
-       LEFT JOIN users v ON v.id = vr.recorded_by
-       WHERE vr.pet_id = ? AND a.user_id = ?
-       ORDER BY vr.administered_at DESC, vr.id DESC`,
-      [id, userId]
-    );
-
-    const combinedRecords = [
-      ...records.map(record => ({ ...record, record_type: 'treatment' })),
-      ...vaccinations.map(record => ({
-        ...record,
-        record_type: 'vaccination',
-        diagnosis: `ฉีดวัคซีน: ${record.vaccine_name}`,
-        service_details: `วัคซีน: ${record.vaccine_name}`
-      }))
-    ].sort((first, second) => new Date(second.created_at) - new Date(first.created_at));
-
-    res.json({ success: true, pet: pets[0], records: combinedRecords });
+    const history = await getPetHealthHistory(id, sessionUserId);
+    if (!history) return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลสัตว์เลี้ยง' });
+    res.json({ success: true, ...history });
   } catch (error) {
     console.error('Fetch Health Records Error:', error);
     res.status(500).json({ success: false, message: 'ไม่สามารถดึงประวัติสุขภาพได้' });
@@ -283,7 +380,7 @@ app.get('/health', (req, res) => {
 // ==========================================
 
 // 1. ดึงรายการผู้ใช้งานทั้งหมด (รองรับ Search & Filter Role)
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', requireAdminSession, async (req, res) => {
     try {
         const { search, role } = req.query;
         let sql = 'SELECT id, full_name, email, phone, role, is_active, created_at FROM users WHERE 1=1';
@@ -310,7 +407,7 @@ app.get('/api/users', async (req, res) => {
 });
 
 // 2. เพิ่มผู้ใช้ใหม่โดย Admin
-app.post('/api/users', async (req, res) => {
+app.post('/api/users', requireAdminSession, async (req, res) => {
    try {
         const { full_name, email, password, phone, role } = req.body;
         
@@ -335,7 +432,7 @@ app.post('/api/users', async (req, res) => {
 });
 
 // 3. แก้ไขข้อมูลผู้ใช้
-app.put('/api/users/:id', async (req, res) => {
+app.put('/api/users/:id', requireAdminSession, async (req, res) => {
     try {
         const { id } = req.params;
         const { full_name, email, phone, role, is_active } = req.body;

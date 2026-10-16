@@ -15,24 +15,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   document.getElementById('nav-user-name').textContent = currentUser.full_name || 'สมาชิก';
+  if (currentUser.role === 'admin') {
+    document.querySelector('main header p.text-sm.text-slate-500').textContent = 'ค้นหาและดูประวัติสุขภาพ/วัคซีนของสัตว์เลี้ยงทุกเจ้าของ';
+  }
   await loadPets();
 });
 
 async function loadPets() {
   const select = document.getElementById('pet-select');
   try {
-    const response = await fetch(`/api/pets/user/${encodeURIComponent(currentUser.id)}`);
+    const isAdmin = currentUser.role === 'admin';
+    const endpoint = isAdmin
+      ? '/api/admin/pets'
+      : `/api/pets/user/${encodeURIComponent(currentUser.id)}`;
+    const response = await fetch(endpoint);
     const data = await response.json();
     if (!response.ok || !data.success) throw new Error(data.message || 'โหลดรายการสัตว์เลี้ยงไม่สำเร็จ');
 
     if (!data.pets.length) {
       select.innerHTML = '<option value="">ยังไม่มีสัตว์เลี้ยง</option>';
-      renderMessage('ยังไม่มีข้อมูลสัตว์เลี้ยง', 'เพิ่มสัตว์เลี้ยงในหน้าจัดการสัตว์เลี้ยงก่อนดูประวัติ');
+      renderMessage(isAdmin ? 'ยังไม่มีสัตว์เลี้ยงในระบบ' : 'ยังไม่มีข้อมูลสัตว์เลี้ยง', isAdmin ? 'เมื่อมีการลงทะเบียนสัตว์เลี้ยง รายชื่อจะแสดงที่นี่' : 'เพิ่มสัตว์เลี้ยงในหน้าจัดการสัตว์เลี้ยงก่อนดูประวัติ');
       return;
     }
 
     select.innerHTML = data.pets.map(pet =>
-      `<option value="${Number(pet.id)}">${escapeHtml(pet.name)}${pet.breed ? ` (${escapeHtml(pet.breed)})` : ''}</option>`
+      `<option value="${Number(pet.id)}">${isAdmin ? `${escapeHtml(pet.owner_name)} · ` : ''}${escapeHtml(pet.name)}${pet.breed ? ` (${escapeHtml(pet.breed)})` : ''}</option>`
     ).join('');
     select.addEventListener('change', loadHealthRecords);
     await loadHealthRecords();
@@ -51,15 +58,19 @@ async function loadHealthRecords() {
   container.innerHTML = '<div class="border-y border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-400">กำลังโหลดประวัติ...</div>';
 
   try {
-    const params = new URLSearchParams({ user_id: currentUser.id });
-    const response = await fetch(`/api/pets/${encodeURIComponent(petId)}/health-records?${params}`);
+    const endpoint = currentUser.role === 'admin'
+      ? `/api/admin/pets/${encodeURIComponent(petId)}/health-records`
+      : `/api/pets/${encodeURIComponent(petId)}/health-records?user_id=${encodeURIComponent(currentUser.id)}`;
+    const response = await fetch(endpoint);
     const data = await response.json();
     if (!response.ok || !data.success) throw new Error(data.message || 'โหลดประวัติไม่สำเร็จ');
 
     healthRecords = data.records || [];
     document.getElementById('pet-summary').classList.remove('hidden');
     document.getElementById('pet-name').textContent = data.pet.name;
-    document.getElementById('pet-details').textContent = [data.pet.type, data.pet.breed].filter(Boolean).join(' · ') || 'ไม่ระบุรายละเอียด';
+    const details = [data.pet.type, data.pet.breed].filter(Boolean);
+    if (data.pet.owner_name) details.unshift(`เจ้าของ: ${data.pet.owner_name}`);
+    document.getElementById('pet-details').textContent = details.join(' · ') || 'ไม่ระบุรายละเอียด';
     document.getElementById('health-count').textContent = healthRecords.length;
     document.getElementById('vaccine-count').textContent = healthRecords.filter(isVaccination).length;
     renderRecords();
@@ -151,7 +162,8 @@ function escapeHtml(value) {
   })[character]);
 }
 
-function handleLogout() {
+async function handleLogout() {
+  try { await fetch('/api/auth/logout', { method: 'POST' }); } catch (error) {}
   localStorage.removeItem('user');
   window.location.href = 'index.html';
 }
