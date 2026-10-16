@@ -1,6 +1,7 @@
 'use strict';
 const express = require('express');
 const crypto = require('node:crypto');
+const loginSession = require('../lib/login-session');
 const v = require('../lib/billing-values');
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
 const parseJSON = value => typeof value === 'string' ? JSON.parse(value) : value;
@@ -11,13 +12,7 @@ function invoice(row) {
 function receipt(row) { return { ...row, request_key: undefined, number: `RCT-${String(row.id).padStart(6, '0')}` }; }
 module.exports = function billingRouter(db) {
   const router = express.Router();
-  const sessions = new Map(), attempts = new Map();
   const wrap = handler => (req, res, next) => Promise.resolve(handler(req, res)).catch(next);
-  const prune = () => {
-    const now = Date.now();
-    for (const [key, session] of sessions) if (session.expires <= now) sessions.delete(key);
-    for (const [key, attempt] of attempts) if (attempt.expires <= now) attempts.delete(key);
-  };
   const requireManager = (req, res, next) => manage(req.billingUser) ? next() : res.status(403).json({ success: false, message: 'เฉพาะเจ้าหน้าที่และแอดมินเท่านั้น' });
   const accessible = (user, row) => { if (!row || parseJSON(row.snapshot)?.deleted || (!manage(user) && row.owner_id !== user.id)) v.fail('ไม่พบเอกสาร', 404); };
   async function transaction(fn) {
@@ -27,42 +22,20 @@ module.exports = function billingRouter(db) {
     finally { connection.release(); }
   }
   router.use((req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
-  router.post('/session', wrap(async (req, res) => {
-    prune();
-    const bucket = req.ip;
-    const attempt = attempts.get(bucket) || { count: 0, expires: Date.now() + 15 * 60 * 1000 };
-    if (attempt.count >= 20 || attempts.size >= 5000 || sessions.size >= 5000) v.fail('ลองเข้าสู่ระบบใหม่ในอีก 15 นาที', 429);
-    attempt.count++; attempts.set(bucket, attempt);
-    const { email, password } = req.body || {};
-    if (typeof email !== 'string' || email.length > 100 || typeof password !== 'string' || password.length > 255) v.fail('กรุณาระบุอีเมลและรหัสผ่าน');
-    const [rows] = await db.execute('SELECT id, full_name, email, password, role, is_active FROM users WHERE email = ?', [email.trim()]);
-    const user = rows[0];
-    // Compatibility with the supplied project's plaintext passwords; no password is stored in a session.
-    const matches = crypto.timingSafeEqual(Buffer.from(hash(password)), Buffer.from(hash(user ? user.password : crypto.randomBytes(32).toString('hex'))));
-    if (!user || !matches || !user.is_active) v.fail('อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือบัญชีถูกระงับ', 401);
-    if (!['admin', 'staff', 'pet_owner'].includes(user.role)) v.fail('บัญชีนี้ไม่มีสิทธิ์ใช้งานส่วนบิล', 403);
-    const token = crypto.randomBytes(32).toString('hex');
-    const expires = Date.now() + 60 * 60 * 1000;
-    sessions.set(hash(token), { id: user.id, expires });
-    attempts.delete(bucket);
-    res.json({ success: true, token, expires, user: { id: user.id, full_name: user.full_name, role: user.role } });
-  }));
-  // The middleware below is the sole authority; browser localStorage roles are never trusted.
+  // Identity comes from the main login's HttpOnly cookie, not localStorage.
   router.use((req, res, next) => {
     Promise.resolve().then(async () => {
-      prune();
-      const token = (req.get('Authorization') || '').match(/^Bearer ([a-f0-9]{64})$/)?.[1];
-      const session = token && sessions.get(hash(token));
-      if (!session) v.fail('กรุณายืนยันตัวตนในหน้าบิลอีกครั้ง', 401);
+      const session = loginSession.read(req);
+      if (!session) v.fail('กรุณาเข้าสู่ระบบจากหน้าแรก', 401);
       const [rows] = await db.execute('SELECT id, full_name, role, is_active FROM users WHERE id = ?', [session.id]);
-      if (!rows[0] || !rows[0].is_active || !['admin', 'staff', 'pet_owner'].includes(rows[0].role)) {
-        sessions.delete(hash(token)); v.fail('บัญชีไม่มีสิทธิ์ใช้งาน', 401);
+      if (!rows[0] || !rows[0].is_active) {
+        loginSession.end(req, res); v.fail('กรุณาเข้าสู่ระบบจากหน้าแรก', 401);
       }
-      req.billingUser = rows[0]; req.billingToken = hash(token); next();
+      if (!['admin', 'staff', 'pet_owner'].includes(rows[0].role)) v.fail('บัญชีนี้ไม่มีสิทธิ์ใช้งานส่วนบิล', 403);
+      req.billingUser = rows[0]; next();
     }).catch(next);
   });
   router.get('/me', (req, res) => res.json({ success: true, user: req.billingUser, simulated: true }));
-  router.delete('/session', (req, res) => { sessions.delete(req.billingToken); res.json({ success: true }); });
   router.get('/customers', requireManager, wrap(async (req, res) => {
     const q = String(req.query.q || '').slice(0, 100);
     const [rows] = await db.execute(`SELECT p.id AS pet_id, p.name AS pet_name, u.id AS owner_id, u.full_name, u.phone

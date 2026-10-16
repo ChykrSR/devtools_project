@@ -1,6 +1,7 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const path = require('path');
+const loginSession = require('./lib/login-session');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -81,6 +82,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const user = users[0];
+    loginSession.create(req, res, user.id);
 
     res.json({
       success: true,
@@ -91,6 +93,12 @@ app.post('/api/auth/login', async (req, res) => {
     console.error('Login Error:', error);
     res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์' });
   }
+});
+
+// Share the main login with Billing; logout also revokes access to invoices.
+app.post('/api/auth/logout', (req, res) => {
+  loginSession.end(req, res);
+  res.json({ success: true });
 });
 
 // ==========================================

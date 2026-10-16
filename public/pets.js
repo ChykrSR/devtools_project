@@ -204,9 +204,14 @@ async function deletePet(id, name) {
   }
 }
 
-function handleLogout() {
-  if (confirm('ต้องการออกจากระบบหรือไม่?')) {
-    localStorage.removeItem('user');
-    window.location.href = 'index.html';
-  }
+async function handleLogout() {
+    try {
+        const response = await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+        if (!response.ok) throw new Error('Logout failed');
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('billing-token');
+        window.location.href = 'index.html';
+    } catch (error) {
+        alert('ออกจากระบบไม่สำเร็จ กรุณาลองอีกครั้ง');
+    }
 }

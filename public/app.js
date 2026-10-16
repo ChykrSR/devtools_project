@@ -55,7 +55,8 @@ async function handleLogin(e) {
       
       // 2. ย้ายไปยังหน้า Dashboard หลักหลังจาก 0.8 วินาที
       setTimeout(() => {
-        window.location.href = 'dashboard.html';
+        const next = new URLSearchParams(window.location.search).get('next');
+        window.location.href = next === 'billing.html' ? 'billing.html' : 'dashboard.html';
       }, 800);
     } else {
       showAlert(data.message || 'เข้าสู่ระบบไม่สำเร็จ');

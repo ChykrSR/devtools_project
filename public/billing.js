@@ -5,21 +5,22 @@
   const money = cents => (cents / 100).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const date = value => new Date(value).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', dateStyle: 'medium', timeStyle: 'short' });
   const methods = { cash: 'เงินสด', transfer: 'โอนเงิน', card: 'บัตร' };
-  let token = sessionStorage.getItem('billing-token') || '', user = null, next = null, current = null, listVersion = 0;
+  let user = null, next = null, current = null, listVersion = 0;
   const manager = () => user && ['admin', 'staff'].includes(user.role);
   const message = text => { $('message').textContent = text; $('message').hidden = !text; };
   function signedOut() {
-    token = ''; user = null; current = null; sessionStorage.removeItem('billing-token');
-    $('workspace').hidden = true; $('login-panel').hidden = false; $('logout').hidden = true; $('identity').textContent = '';
+    user = null; current = null; localStorage.removeItem('user');
+    $('workspace').hidden = true; $('identity').textContent = '';
     document.querySelectorAll('dialog[open]').forEach(dialog => dialog.close());
     $('document').replaceChildren(); $('invoice-list').replaceChildren();
+    window.location.replace('index.html?next=billing.html');
   }
   async function api(path, options = {}) {
-    const response = await fetch('/api/billing' + path, { ...options, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}), ...options.headers } });
+    const response = await fetch('/api/billing' + path, { ...options, credentials: 'same-origin', headers: { 'Content-Type': 'application/json', ...options.headers } });
     let result;
     try { result = await response.json(); } catch { throw new Error('เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง กรุณาตรวจสอบการติดตั้งส่วนบิล'); }
     if (!response.ok || !result.success) {
-      if (response.status === 401 && path !== '/session') signedOut();
+      if (response.status === 401) signedOut();
       throw new Error(result.message || 'ไม่สามารถดำเนินการได้');
     }
     return result;
@@ -35,7 +36,7 @@
   async function busy(button, fn) { button.disabled = true; try { await fn(); } finally { button.disabled = false; } }
   async function enter() {
     const result = await api('/me'); user = result.user;
-    $('login-panel').hidden = true; $('workspace').hidden = false; $('logout').hidden = false;
+    $('workspace').hidden = false;
     $('new-invoice').hidden = !manager(); $('identity').textContent = `${user.full_name} • ${user.role}`;
     await loadList();
   }
@@ -149,15 +150,6 @@
     $('payment-history').append(button);
     if (!$('detail-dialog').open) $('detail-dialog').showModal();
   }
-  $('login-form').addEventListener('submit', event => {
-    event.preventDefault(); busy(event.submitter, async () => {
-      try {
-        const result = await api('/session', { method: 'POST', body: JSON.stringify({ email: $('email').value, password: $('password').value }) });
-        token = result.token; sessionStorage.setItem('billing-token', token); $('password').value = ''; message(''); await enter();
-      } catch (error) { message(error.message); }
-    });
-  });
-  $('logout').addEventListener('click', () => busy($('logout'), async () => { try { await api('/session', { method: 'DELETE' }); signedOut(); message('ออกจากส่วนบิลแล้ว'); } catch (error) { message(error.message); } }));
   $('filter-form').addEventListener('submit', event => { event.preventDefault(); busy(event.submitter, () => loadList().catch(error => message(error.message))); });
   $('more').addEventListener('click', () => busy($('more'), () => loadList(true).catch(error => message(error.message))));
   $('new-invoice').addEventListener('click', async () => {
@@ -192,7 +184,6 @@
   });
   document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => $(button.dataset.close).close()));
   $('print').addEventListener('click', () => window.print());
-  // Prefill only; identity and permissions are verified by the billing API.
-  try { $('email').value = JSON.parse(localStorage.getItem('user') || 'null')?.email || ''; } catch { /* Ignore malformed legacy storage. */ }
-  if (token) enter().catch(error => message(error.message));
+  sessionStorage.removeItem('billing-token'); // Discard tokens from older releases.
+  enter().catch(error => message(error.message));
 })();

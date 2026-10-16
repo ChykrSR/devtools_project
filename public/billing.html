@@ -6,14 +6,10 @@
   <link rel="stylesheet" href="billing.css"><script defer src="billing.js"></script>
 </head>
 <body>
-  <header class="topbar"><a href="dashboard.html" class="brand">🐾 Pet Care Clinic</a><nav><a href="dashboard.html">กลับหน้าแรก</a><button id="logout" class="quiet" hidden>ออกจากส่วนบิล</button></nav></header>
+  <header class="topbar"><a href="dashboard.html" class="brand">🐾 Pet Care Clinic</a><nav><a href="dashboard.html">กลับหน้าแรก</a></nav></header>
   <main>
     <div class="heading"><div><p class="eyebrow">CLINIC BILLING</p><h1>บิลค่ารักษาและใบเสร็จ</h1><p class="muted">ออกบิล ติดตามยอดคงเหลือ และดูประวัติการชำระเงิน</p></div><span id="identity" class="badge"></span></div>
     <p id="message" role="status" aria-live="polite" hidden></p>
-    <section id="login-panel" class="card login">
-      <h2>ยืนยันตัวตนเพื่อเข้าถึงเอกสาร</h2><p class="muted">ใช้บัญชีเดิมของคลินิก เซสชันส่วนบิลมีอายุ 1 ชั่วโมง</p>
-      <form id="login-form"><label>อีเมล<input id="email" type="email" required maxlength="100" autocomplete="username"></label><label>รหัสผ่าน<input id="password" type="password" required maxlength="255" autocomplete="current-password"></label><button type="submit">เข้าสู่ส่วนบิล</button></form>
-    </section>
     <section id="workspace" hidden>
       <div class="toolbar"><h2>รายการใบแจ้งหนี้</h2><button id="new-invoice" hidden>＋ ออกบิลค่ารักษา</button></div>
       <form id="filter-form" class="filters card"><label class="grow">ค้นหาเอกสาร<input id="search" placeholder="เลขบิล ชื่อเจ้าของ หรือชื่อสัตว์เลี้ยง" maxlength="100"></label><button type="submit">ค้นหา</button></form>
