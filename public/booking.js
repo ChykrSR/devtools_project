@@ -41,7 +41,7 @@ function loadUserInfo() {
             } else {
                 navUserName.textContent = 'สมาชิก';
             }
-        }
+        }aaaaaaaaaaa
     } catch (err) {
         console.error('Error loading user info:', err);
         const navUserName = document.getElementById('nav-user-name');
