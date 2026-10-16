@@ -1,3 +1,5 @@
+name: devtool_project
+
 services:
   # บริการ Backend (Node.js + Express)
   web:
