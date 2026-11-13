@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS pets (
 INSERT IGNORE INTO users (id, full_name, email, password, phone, role) VALUES 
 (1, 'Admin Clinic', 'admin@petclinic.com', '123456', '0812345678', 'admin'),
 (2, 'สมชาย ใจดี', 'somchai@gmail.com', '123456', '0812345678', 'pet_owner');
+(3, 'สัตวแพทย์ทดสอบ', 'vet@petclinic.com', '123456', '0812345678', 'vet')
 
 -- Mock Data: Pets (ผูกกับ user_id = 2 ของสมชาย ใจดี)
 INSERT IGNORE INTO pets (id, user_id, name, type, breed, age, gender, weight, notes) VALUES
