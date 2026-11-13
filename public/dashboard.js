@@ -93,6 +93,8 @@ async function loadTodayQueue(userId) {
         const result = await response.json();
         if (!response.ok || !result.success) throw new Error(result.message || 'โหลดสถานะคิวไม่สำเร็จ');
 
+        updateNextAppointment(result.appointments || []);
+
         const now = new Date();
         const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const todayAppointments = (result.appointments || []).filter(appointment =>
@@ -132,7 +134,56 @@ async function loadTodayQueue(userId) {
     } catch (error) {
         title.textContent = 'โหลดสถานะคิวไม่ได้';
         detail.textContent = error.message || 'กรุณาลองใหม่อีกครั้ง';
+        const nextTitle = document.getElementById('next-appointment-title');
+        const nextDetail = document.getElementById('next-appointment-detail');
+        if (nextTitle && nextDetail) {
+            nextTitle.textContent = 'โหลดนัดหมายไม่ได้';
+            nextDetail.textContent = 'กรุณาลองใหม่อีกครั้ง';
+        }
     }
+}
+
+function updateNextAppointment(appointments) {
+    const title = document.getElementById('next-appointment-title');
+    const detail = document.getElementById('next-appointment-detail');
+    if (!title || !detail) return;
+
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const upcomingAppointments = appointments
+        .filter(appointment => ['pending', 'calling', 'in_progress'].includes(appointment.status))
+        .map(appointment => {
+            const date = String(appointment.appointment_date || '').slice(0, 10);
+            const time = String(appointment.appointment_time || '').slice(0, 8);
+            return { ...appointment, date, time, scheduledAt: new Date(`${date}T${time}`) };
+        })
+        .filter(appointment =>
+            !Number.isNaN(appointment.scheduledAt.getTime())
+            && (appointment.scheduledAt >= now
+                || (appointment.date === todayKey && ['calling', 'in_progress'].includes(appointment.status)))
+        )
+        .sort((a, b) => a.scheduledAt - b.scheduledAt);
+
+    const nextAppointment = upcomingAppointments[0];
+    if (!nextAppointment) {
+        title.textContent = 'ยังไม่มีนัดหมาย';
+        detail.textContent = 'กดจองคิวรับบริการล่วงหน้าได้เลย';
+        return;
+    }
+
+    const statusLabels = {
+        pending: 'รอเรียกคิว',
+        calling: 'กำลังเรียกคิว',
+        in_progress: 'กำลังตรวจ'
+    };
+    const appointmentDate = nextAppointment.scheduledAt.toLocaleDateString('th-TH', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+    });
+    const appointmentTime = nextAppointment.time.slice(0, 5);
+    title.textContent = `${nextAppointment.pet_name || 'สัตว์เลี้ยง'} · ${appointmentDate}`;
+    detail.textContent = `${appointmentTime} น. · ${statusLabels[nextAppointment.status]}`;
 }
 
 // ฟังก์ชันดึงสัตว์เลี้ยงจาก Backend API
