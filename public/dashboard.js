@@ -32,26 +32,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // 🟢 3. เปิดแสดงผลปุ่ม Admin ต่างๆ เมื่อ user.role === 'admin'
     if (user.role === 'admin') {
         const adminClinicMenu = document.getElementById('adminClinicMenu');
-        const adminQueueMenu = document.getElementById('adminQueueMenu');
-        const adminQueueCard = document.getElementById('adminQueueCard');
+        //const adminQueueMenu = document.getElementById('adminQueueMenu');
+        //const adminQueueCard = document.getElementById('adminQueueCard');
         const editClinicBtn = document.getElementById('editClinicBtn');
 
         if (adminClinicMenu) {
             adminClinicMenu.classList.remove('hidden');
             adminClinicMenu.classList.add('flex');
         }
-        if (adminQueueMenu) {
+        /*if (adminQueueMenu) {
             adminQueueMenu.classList.remove('hidden');
             adminQueueMenu.classList.add('flex');
         }
         if (adminQueueCard) {
             adminQueueCard.classList.remove('hidden');
             adminQueueCard.classList.add('block');
-        }
+        }*/
         if (editClinicBtn) {
             editClinicBtn.classList.remove('hidden');
             editClinicBtn.classList.add('flex');
         }
+    }
+    if (user.role === 'vet') {
+        ['adminQueueMenu', 'adminQueueCard'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.classList.remove('hidden');
+                el.classList.add(id === 'adminQueueCard' ? 'block' : 'flex');
+            }
+        });
     }
 
     // 4. ดึง ID ของ User (รองรับทั้ง user.id และ user.user_id)

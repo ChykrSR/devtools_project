@@ -6,7 +6,7 @@
   const date = value => new Date(value).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', dateStyle: 'medium', timeStyle: 'short' });
   const methods = { cash: 'เงินสด', transfer: 'โอนเงิน', card: 'บัตร' };
   let token = sessionStorage.getItem('billing-token') || '', user = null, next = null, current = null, listVersion = 0;
-  const manager = () => user && ['admin', 'staff'].includes(user.role);
+  const manager = () => user && user.role === 'vet';
   const message = text => { $('message').textContent = text; $('message').hidden = !text; };
   function signedOut() {
     token = ''; user = null; current = null; sessionStorage.removeItem('billing-token');

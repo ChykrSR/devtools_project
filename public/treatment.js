@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = 'index.html';
         return;
     }
-    document.getElementById('userInfo').textContent = `${currentUser.full_name || 'ผู้ใช้งาน'} (${currentUser.role || 'staff'})`;
+    document.getElementById('userInfo').textContent = `${currentUser.full_name || 'ผู้ใช้งาน'} (${currentUser.role || 'vet'})`;
 
     const urlParams = new URLSearchParams(window.location.search);
     appointmentId = urlParams.get('appointment_id');

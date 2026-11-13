@@ -4,7 +4,7 @@ const crypto = require('node:crypto');
 const v = require('../lib/billing-values');
 const hash = value => crypto.createHash('sha256').update(value).digest('hex');
 const parseJSON = value => typeof value === 'string' ? JSON.parse(value) : value;
-const manage = user => ['admin', 'staff'].includes(user.role);
+ const manage = user => user.role === 'vet';
 function invoice(row) {
   return { ...row, request_key: undefined, request_hash: undefined, snapshot: parseJSON(row.snapshot), items: parseJSON(row.items), number: `INV-${String(row.id).padStart(6, '0')}`, status: v.status(row), balance_cents: row.total_cents - row.paid_cents, is_simulated: true };
 }
@@ -40,7 +40,7 @@ module.exports = function billingRouter(db) {
     // Compatibility with the supplied project's plaintext passwords; no password is stored in a session.
     const matches = crypto.timingSafeEqual(Buffer.from(hash(password)), Buffer.from(hash(user ? user.password : crypto.randomBytes(32).toString('hex'))));
     if (!user || !matches || !user.is_active) v.fail('อีเมลหรือรหัสผ่านไม่ถูกต้อง หรือบัญชีถูกระงับ', 401);
-    if (!['admin', 'staff', 'pet_owner'].includes(user.role)) v.fail('บัญชีนี้ไม่มีสิทธิ์ใช้งานส่วนบิล', 403);
+    if (!['vet', 'pet_owner'].includes(user.role)) v.fail('บัญชีนี้ไม่มีสิทธิ์ใช้งานส่วนบิล', 403);
     const token = crypto.randomBytes(32).toString('hex');
     const expires = Date.now() + 60 * 60 * 1000;
     sessions.set(hash(token), { id: user.id, expires });
@@ -55,7 +55,7 @@ module.exports = function billingRouter(db) {
       const session = token && sessions.get(hash(token));
       if (!session) v.fail('กรุณายืนยันตัวตนในหน้าบิลอีกครั้ง', 401);
       const [rows] = await db.execute('SELECT id, full_name, role, is_active FROM users WHERE id = ?', [session.id]);
-      if (!rows[0] || !rows[0].is_active || !['admin', 'staff', 'pet_owner'].includes(rows[0].role)) {
+      if (!rows[0] || !rows[0].is_active || !['vet', 'pet_owner'].includes(rows[0].role)) {
         sessions.delete(hash(token)); v.fail('บัญชีไม่มีสิทธิ์ใช้งาน', 401);
       }
       req.billingUser = rows[0]; req.billingToken = hash(token); next();

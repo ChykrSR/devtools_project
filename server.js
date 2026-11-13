@@ -46,6 +46,13 @@ async function requireAdminSession(req, res, next) {
     res.status(500).json({ success: false, message: 'ตรวจสอบสิทธิ์ไม่สำเร็จ' });
   }
 }
+async function requireVetOrAdminSession(req, res, next) {
+  const userId = getSessionUserId(req);
+  if (!userId) return res.status(401).json({ success: false, message: 'กรุณาเข้าสู่ระบบใหม่' });
+  const [rows] = await db.execute("SELECT id FROM users WHERE id = ? AND role IN ('admin', 'vet')", [userId]);
+  if (!rows.length) return res.status(403).json({ success: false, message: 'ไม่มีสิทธิ์ใช้งาน' });
+  next();
+}
 
 function setSessionCookie(req, res, userId) {
   const secure = req.secure ? '; Secure' : '';
@@ -321,7 +328,7 @@ async function getPetHealthHistory(petId, ownerUserId = null) {
   return { pet: pets[0], records: combinedRecords };
 }
 
-app.get('/api/admin/pets', requireClinicalSchema, requireAdminSession, async (req, res) => {
+app.get('/api/admin/pets', requireClinicalSchema, requireVetOrAdminSession, async (req, res) => {
   try {
     const [pets] = await db.execute(
       `SELECT p.id, p.name, p.type, p.breed, p.user_id, u.full_name AS owner_name
@@ -337,7 +344,7 @@ app.get('/api/admin/pets', requireClinicalSchema, requireAdminSession, async (re
   }
 });
 
-app.get('/api/admin/pets/:id/health-records', requireClinicalSchema, requireAdminSession, async (req, res) => {
+app.get('/api/admin/pets/:id/health-records', requireClinicalSchema, requireVetOrAdminSession, async (req, res) => {
   try {
     const history = await getPetHealthHistory(req.params.id);
     if (!history) return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลสัตว์เลี้ยง' });
@@ -575,7 +582,7 @@ app.put('/api/appointments/:id/cancel', async (req, res) => {
 });
 
 // ==========================================
-// UC-07: API สำหรับจัดการคิว (Staff/Vet)
+// UC-07: API สำหรับจัดการคิว (Vet)
 // ==========================================
 
 // ดึงรายการคิวทั้งหมดตาม วันที่ และ สถานะ

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
-    role ENUM('pet_owner', 'vet', 'staff', 'admin') DEFAULT 'pet_owner',
+    role ENUM('pet_owner', 'vet', 'admin') DEFAULT 'pet_owner',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
