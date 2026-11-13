@@ -4,23 +4,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>จัดการคิวและนัดหมาย (UC-07)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Kanit', sans-serif, system-ui; }
-        body { background-color: #f4f6f8; min-height: 100vh; }
-        .navbar { background-color: #00897b; color: white; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
-        .navbar a { color: white; text-decoration: none; font-size: 14px; }
-        .container { max-width: 1000px; margin: 30px auto; padding: 0 16px; }
+        body { background-color: #f4f6f8; min-height: 100vh; color: #1e293b; }
+
+        /* Navbar สไตล์เดียวกับหน้าจองคิวนัดหมาย */
+        .navbar { background-color: #115e59; color: white; padding: 14px 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .navbar-inner { max-width: 1060px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .nav-left { display: flex; align-items: center; gap: 14px; }
+        .nav-back { color: #ccfbf1; text-decoration: none; font-size: 14px; transition: color 0.15s; }
+        .nav-back:hover { color: #ffffff; }
+        .nav-divider { width: 1px; height: 20px; background-color: rgba(255, 255, 255, 0.25); }
+        .nav-title { font-weight: 600; font-size: 16px; color: #ffffff; display: flex; align-items: center; gap: 8px; }
+
+        .nav-right { display: flex; align-items: center; gap: 14px; }
+        .nav-user { font-size: 14px; font-weight: 500; color: #ffffff; }
+        .btn-logout { background-color: rgba(13, 148, 136, 0.25); border: 1px solid #2dd4bf; color: #ffffff; padding: 6px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; transition: background-color 0.15s; }
+        .btn-logout:hover { background-color: rgba(255, 255, 255, 0.15); }
+
+        .container { max-width: 1060px; margin: 30px auto; padding: 0 16px; }
         .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; align-items: center; }
-        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+        
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; gap: 10px; }
+        .card-title { font-size: 18px; font-weight: 600; color: #0f172a; }
+        .queue-count { font-size: 13px; background: #ccfbf1; color: #115e59; padding: 4px 12px; border-radius: 20px; font-weight: 500; }
+
+        .filter-bar { display: flex; gap: 14px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; background: #f8fafc; padding: 14px 16px; border-radius: 10px; border: 1px solid #e2e8f0; }
+        .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .filter-label { font-size: 14px; font-weight: 500; color: #475569; }
+        
+        input[type="date"], select { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; background-color: white; color: #1e293b; cursor: pointer; outline: none; }
+        input[type="date"]:focus, select:focus { border-color: #115e59; }
+
+        .btn-filter { padding: 7px 12px; font-size: 13px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; color: #334155; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+        .btn-filter:hover { background: #f1f5f9; }
+        .btn-today { border-color: #115e59; color: #115e59; background: #f0fdfa; }
+        .btn-today:hover { background: #ccfbf1; }
+
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 760px; }
+        th { background-color: #f8fafc; color: #475569; font-weight: 600; padding: 12px; text-align: left; border-bottom: 2px solid #e2e8f0; font-size: 13px; }
+        td { padding: 12px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: middle; }
+        tbody tr:hover { background-color: #f8fafc; }
+
+        .queue-no { display: inline-block; background: #ccfbf1; color: #115e59; font-weight: 600; padding: 3px 10px; border-radius: 6px; font-size: 13px; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; display: inline-block; }
         .bg-pending { background-color: #fff3cd; color: #856404; }
         .bg-calling { background-color: #cce5ff; color: #004085; }
+        .bg-inprogress { background-color: #e0e7ff; color: #3730a3; }
         .bg-completed { background-color: #d4edda; color: #155724; }
         .bg-cancelled { background-color: #f8d7da; color: #721c24; }
-        .btn { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; color: white; font-weight: 500; }
+
+        .action-group { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+        .btn { padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; color: white; font-weight: 500; transition: opacity 0.15s; }
+        .btn:hover { opacity: 0.9; }
         .btn-call { background-color: #0288d1; }
         .btn-rx { background-color: #2e7d32; text-decoration: none; display: inline-block; }
         .btn-cancel { background-color: #c62828; }
@@ -28,44 +66,71 @@
 </head>
 <body>
     <div class="navbar">
-        <a href="dashboard.html">← กลับหน้าหลัก</a>
-        <span style="font-weight:600;">ระบบจัดการคิวและนัดหมาย (UC-07)</span>
-        <span id="userInfo" style="font-size:13px;"></span>
+        <div class="navbar-inner">
+            <div class="nav-left">
+                <a href="dashboard.html" class="nav-back">← กลับหน้าหลัก</a>
+                <span class="nav-divider"></span>
+                <span class="nav-title">🐾 จัดการคิวและนัดหมาย (UC-07)</span>
+            </div>
+            <div class="nav-right">
+                <span id="userInfo" class="nav-user"></span>
+                <button type="button" class="btn-logout" onclick="handleLogout()">ออกจากระบบ</button>
+            </div>
+        </div>
     </div>
 
     <div class="container">
         <div class="card">
-            <div class="filter-bar">
-                <label>เลือกวันที่:</label>
-                <input type="date" id="filterDate" onchange="loadQueues()">
-                <label>สถานะ:</label>
-                <select id="filterStatus" onchange="loadQueues()">
-                    <option value="all">ทั้งหมด</option>
-                    <option value="pending">รอเรียกคิว</option>
-                    <option value="calling">กำลังเรียกคิว</option>
-                    <option value="in_progress">กำลังตรวจ</option>
-                    <option value="completed">เสร็จสิ้น</option>
-                    <option value="cancelled">ยกเลิก</option>
-                </select>
+            <div class="card-header">
+                <span class="card-title">รายการคิวนัดหมายเข้ารับบริการ</span>
+                <span class="queue-count" id="queueSummary">ทั้งหมด 0 คิว</span>
             </div>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>เวลา</th>
-                        <th>เจ้าของ</th>
-                        <th>สัตว์เลี้ยง</th>
-                        <th>อาการ</th>
-                        <th>สถานะ</th>
-                        <th>การดำเนินการ</th>
-                    </tr>
-                </thead>
-                <tbody id="queueList">
-                    <tr><td colspan="6" style="text-align:center;">กำลังโหลดข้อมูล...</td></tr>
-                </tbody>
-            </table>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label class="filter-label" for="filterDate">เลือกวันที่:</label>
+                    <input type="date" id="filterDate" lang="th-TH" onchange="loadQueues()">
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label" for="filterStatus">สถานะ:</label>
+                    <select id="filterStatus" onchange="loadQueues()">
+                        <option value="all">ทั้งหมด</option>
+                        <option value="pending">รอเรียกคิว</option>
+                        <option value="calling">กำลังเรียกคิว</option>
+                        <option value="in_progress">กำลังตรวจ</option>
+                        <option value="completed">เสร็จสิ้น</option>
+                        <option value="cancelled">ยกเลิก</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <button type="button" class="btn-filter btn-today" onclick="setFilterToday()">วันนี้</button>
+                    <button type="button" class="btn-filter" onclick="resetFilters()">แสดงทั้งหมด</button>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ลำดับคิว</th>
+                            <th>วันที่ & เวลา</th>
+                            <th>เจ้าของ</th>
+                            <th>สัตว์เลี้ยง</th>
+                            <th>อาการ / สาเหตุ</th>
+                            <th>สถานะ</th>
+                            <th>การดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="queueList">
+                        <tr><td colspan="7" style="text-align:center; padding:24px; color:#64748b;">กำลังโหลดข้อมูล...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
     <script src="queue-manage.js"></script>
 </body>
 </html>

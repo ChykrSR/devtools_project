@@ -539,6 +539,41 @@ app.get('/api/appointments/user/:userId', async (req, res) => {
   }
 });
 
+// ยกเลิกการจองคิวนัดหมาย (Cancel)
+app.put('/api/appointments/:id/cancel', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. ตรวจสอบว่ามีคิวนี้อยู่จริงและสถานะยังยกเลิกได้หรือไม่
+    const [appointments] = await db.execute(
+      'SELECT id, status FROM appointments WHERE id = ?',
+      [id]
+    );
+
+    if (appointments.length === 0) {
+      return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลการจองนัดหมาย' });
+    }
+
+    if (appointments[0].status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'ไม่สามารถยกเลิกคิวนี้ได้ เนื่องจากคิวกำลังดำเนินการ เสร็จสิ้น หรือถูกยกเลิกไปแล้ว'
+      });
+    }
+
+    // 2. อัปเดตสถานะเป็น cancelled
+    await db.execute(
+      "UPDATE appointments SET status = 'cancelled' WHERE id = ?",
+      [id]
+    );
+
+    res.json({ success: true, message: 'ยกเลิกการจองนัดหมายเรียบร้อยแล้ว' });
+  } catch (error) {
+    console.error('Cancel Appointment Error:', error);
+    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการยกเลิกคิว' });
+  }
+});
+
 // ==========================================
 // UC-07: API สำหรับจัดการคิว (Staff/Vet)
 // ==========================================

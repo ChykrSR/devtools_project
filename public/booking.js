@@ -41,7 +41,7 @@ function loadUserInfo() {
             } else {
                 navUserName.textContent = 'สมาชิก';
             }
-        }aaaaaaaaaaa
+        }
     } catch (err) {
         console.error('Error loading user info:', err);
         const navUserName = document.getElementById('nav-user-name');
@@ -255,15 +255,20 @@ async function cancelBooking(id) {
     if (!confirm('คุณต้องการยกเลิกการจองนัดหมายนี้ใช่หรือไม่?')) return;
 
     try {
-        await fetch(`/api/appointments/${id}/cancel`, { method: 'PUT' });
+        const res = await fetch(`/api/appointments/${id}/cancel`, { method: 'PUT' });
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            alert(errData.message || `ยกเลิกไม่สำเร็จ (HTTP ${res.status}) กรุณาตรวจสอบ Route ฝั่ง Backend`);
+            return;
+        }
     } catch (err) {
-        console.warn('API error, updating local mock');
+        console.warn('API error, updating local mock:', err);
+        let mockList = JSON.parse(localStorage.getItem('mockAppointments') || '[]');
+        mockList = mockList.map(item => item.id == id ? { ...item, status: 'cancelled' } : item);
+        localStorage.setItem('mockAppointments', JSON.stringify(mockList));
     }
 
-    let mockList = JSON.parse(localStorage.getItem('mockAppointments') || '[]');
-    mockList = mockList.map(item => item.id == id ? { ...item, status: 'cancelled' } : item);
-    localStorage.setItem('mockAppointments', JSON.stringify(mockList));
-
+    alert('ยกเลิกการจองนัดหมายเรียบร้อยแล้ว');
     loadBookingHistory();
 }
 

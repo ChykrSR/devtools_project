@@ -35,7 +35,7 @@ INSERT IGNORE INTO users (id, full_name, email, password, phone, role) VALUES
 
 -- Mock Data: Pets (ผูกกับ user_id = 2 ของสมชาย ใจดี)
 INSERT IGNORE INTO pets (id, user_id, name, type, breed, age, gender, weight, notes) VALUES
-(1, 2, 'โคล่า', 'dog', 'โกลเด้น รีทรีฟเวอร์', '3 ปี', 'male', 28.50, 'แพ้อาหารทะเล'),
+(1, 2, 'โคล่า', 'dog', 'โกลเด้น aรีทรีฟเวอร์', '3 ปี', 'male', 28.50, 'แพ้อาหารทะเล'),
 (2, 2, 'ส้มส้ม', 'cat', 'เปอร์เซีย', '1 ปี 6 เดือน', 'female', 4.20, 'ทำหมันแล้ว');
 
 ALTER TABLE users ADD COLUMN is_active TINYINT(1) DEFAULT 1 AFTER role;
